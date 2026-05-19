@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>The Protocol — Workout Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080808; font-family: 'DM Mono', 'Courier New', monospace; color: #e8e8e8; -webkit-tap-highlight-color: transparent; }
+  input { box-sizing: border-box; }
+  ::-webkit-scrollbar { display: none; }
+  input::placeholder { color: #333; }
+  a { color: inherit; text-decoration: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+// type: "strength"=weight+reps | "cardio"=duration+notes | "bodyweight"=reps+notes | "timed"=seconds+notes
+const WORKOUT_PLAN = {
+  Monday: {
+    name: "Push — Chest + Shoulders + Triceps", emoji: "💪", tag: "PUSH",
+    exercises: [
+      { name: "Dumbbell Bench Press",       sets: 4, target: "10-12",  type: "strength",   video: "https://www.youtube.com/watch?v=VmB1G1K7v94" },
+      { name: "Incline Dumbbell Press",     sets: 3, target: "10-12",  type: "strength",   video: "https://www.youtube.com/watch?v=8iPEnn-ltC8" },
+      { name: "Dumbbell Shoulder Press",    sets: 3, target: "10-12",  type: "strength",   video: "https://www.youtube.com/watch?v=qEwKCR5JCog" },
+      { name: "Dumbbell Lateral Raises",    sets: 4, target: "12-15",  type: "strength",   video: "https://www.youtube.com/watch?v=3VcKaXpzqRo" },
+      { name: "Band Chest Flyes",           sets: 3, target: "12-15",  type: "strength",   video: "https://www.youtube.com/watch?v=8lDC4Ri9zAQ" },
+      { name: "Overhead Tricep Extension",  sets: 3, target: "12",     type: "strength",   video: "https://www.youtube.com/watch?v=nRiJVZDpdL0" },
+      { name: "Tricep Pushdowns (Band)",    sets: 3, target: "15",     type: "strength",   video: "https://www.youtube.com/watch?v=2-LAMcpzODU" },
+    ],
+  },
+  Tuesday: {
+    name: "Pull — Back + Biceps + Rear Delts", emoji: "🏋️", tag: "PULL",
+    exercises: [
+      { name: "Dumbbell Bent Over Row",     sets: 4, target: "10-12",  type: "strength",   video: "https://www.youtube.com/watch?v=roCP6wCXPqo" },
+      { name: "Single Arm Dumbbell Row",    sets: 3, target: "10 each",type: "strength",   video: "https://www.youtube.com/watch?v=pYcpY20QaE8" },
+      { name: "Chest Supported DB Row",     sets: 3, target: "12",     type: "strength",   video: "https://www.youtube.com/watch?v=MgCOXiqULQM" },
+      { name: "Band Face Pulls",            sets: 4, target: "15-20",  type: "strength",   video: "https://www.youtube.com/watch?v=rep-qVOkqgk" },
+      { name: "Band Pull Aparts",           sets: 3, target: "15",     type: "bodyweight", video: "https://www.youtube.com/watch?v=jfBFBCEm5_U" },
+      { name: "Dumbbell Bicep Curls",       sets: 3, target: "12",     type: "strength",   video: "https://www.youtube.com/watch?v=ykJmrZ5v0Oo" },
+      { name: "Hammer Curls",              sets: 3, target: "12",     type: "strength",   video: "https://www.youtube.com/watch?v=zC3nLlEvin4" },
+    ],
+  },
+  Wednesday: {
+    name: "Legs — Quads + Hamstrings + Glutes + Calves", emoji: "🦵", tag: "LEGS",
+    exercises: [
+      { name: "Kettlebell Goblet Squat",    sets: 4, target: "12-15",  type: "strength",   video: "https://www.youtube.com/watch?v=MxsFDhcyFyE" },
+      { name: "Dumbbell Romanian Deadlift", sets: 4, target: "10-12",  type: "strength",   video: "https://www.youtube.com/watch?v=JCXUYuzwNrM" },
+      { name: "Dumbbell Lunges",            sets: 3, target: "10 each",type: "strength",   video: "https://www.youtube.com/watch?v=D7KaRcUTQeE" },
+      { name: "Dumbbell Sumo Squat",        sets: 3, target: "12-15",  type: "strength",   video: "https://www.youtube.com/watch?v=_-MbgEeqmsc" },
+      { name: "Band Glute Kickbacks",       sets: 3, target: "15 each",type: "bodyweight", video: "https://www.youtube.com/watch?v=nxcDDPiRAZA" },
+      { name: "Band Seated Abduction",      sets: 3, target: "20",     type: "bodyweight", video: "https://www.youtube.com/watch?v=mhQiAPSFSuY" },
+      { name: "Calf Raises",               sets: 4, target: "20-25",  type: "bodyweight", video: "https://www.youtube.com/watch?v=gwLzBJYoWlI" },
+    ],
+  },
+  Thursday: {
+    name: "Upper — Chest + Back + Shoulders + Arms", emoji: "🔥", tag: "UPPER",
+    exercises: [
+      { name: "Dumbbell Bench Press",       sets: 3, target: "12-15",  type: "strength",   video: "https://www.youtube.com/watch?v=VmB1G1K7v94" },
+      { name: "Dumbbell Bent Over Row",     sets: 3, target: "12-15",  type: "strength",   video: "https://www.youtube.com/watch?v=roCP6wCXPqo" },
+      { name: "Arnold Press",              sets: 3, target: "12",     type: "strength",   video: "https://www.youtube.com/watch?v=6Z15_WdXmVw" },
+      { name: "Single Arm DB Row",         sets: 3, target: "12 each",type: "strength",   video: "https://www.youtube.com/watch?v=pYcpY20QaE8" },
+      { name: "Dumbbell Lateral Raises",   sets: 3, target: "15",     type: "strength",   video: "https://www.youtube.com/watch?v=3VcKaXpzqRo" },
+      { name: "Band Face Pulls",           sets: 3, target: "20",     type: "strength",   video: "https://www.youtube.com/watch?v=rep-qVOkqgk" },
+      { name: "Dumbbell Bicep Curls",      sets: 2, target: "15",     type: "strength",   video: "https://www.youtube.com/watch?v=ykJmrZ5v0Oo" },
+      { name: "Tricep Kickbacks",          sets: 2, target: "15",     type: "strength",   video: "https://www.youtube.com/watch?v=6SS6K3lAwZ8" },
+    ],
+  },
+  Friday: {
+    name: "Lower — Quads + Hamstrings + Glutes + Core", emoji: "⚡", tag: "LOWER",
+    exercises: [
+      { name: "Dumbbell Deadlift",          sets: 4, target: "10-12",  type: "strength",   video: "https://www.youtube.com/watch?v=op9kVnSso6Q" },
+      { name: "Kettlebell Goblet Squat",    sets: 3, target: "12-15",  type: "strength",   video: "https://www.youtube.com/watch?v=MxsFDhcyFyE" },
+      { name: "Dumbbell Reverse Lunges",    sets: 3, target: "10 each",type: "strength",   video: "https://www.youtube.com/watch?v=xrjMuqyR2yg" },
+      { name: "Dumbbell Stiff Leg Deadlift",sets: 3, target: "12",     type: "strength",   video: "https://www.youtube.com/watch?v=1uDiW5--rAE" },
+      { name: "Band Glute Kickbacks",       sets: 3, target: "20 each",type: "bodyweight", video: "https://www.youtube.com/watch?v=nxcDDPiRAZA" },
+      { name: "Plank",                      sets: 3, target: "45 sec", type: "timed",      video: "https://www.youtube.com/watch?v=ASdvN_XEl_c" },
+      { name: "Lying Leg Raises",           sets: 3, target: "15",     type: "bodyweight", video: "https://www.youtube.com/watch?v=JB2oyawG9KI" },
+      { name: "Russian Twists",             sets: 3, target: "20",     type: "bodyweight", video: "https://www.youtube.com/watch?v=wkD8rjkodUI" },
+    ],
+  },
+  Saturday: {
+    name: "Cardio + Core", emoji: "🏃", tag: "CARDIO",
+    exercises: [
+      { name: "Incline Treadmill Walk",     sets: 1, target: "25 mins",type: "cardio",     video: "https://www.youtube.com/watch?v=vGvAFO_EwUQ" },
+      { name: "Cycling (Steady Pace)",      sets: 1, target: "15 mins",type: "cardio",     video: "https://www.youtube.com/watch?v=9L2b2khySLE" },
+      { name: "Kettlebell Swings",          sets: 3, target: "15",     type: "strength",   video: "https://www.youtube.com/watch?v=YSxHifyI6s8" },
+      { name: "Plank",                      sets: 3, target: "45 sec", type: "timed",      video: "https://www.youtube.com/watch?v=ASdvN_XEl_c" },
+      { name: "Lying Leg Raises",           sets: 3, target: "15",     type: "bodyweight", video: "https://www.youtube.com/watch?v=JB2oyawG9KI" },
+      { name: "Russian Twists",             sets: 3, target: "20",     type: "bodyweight", video: "https://www.youtube.com/watch?v=wkD8rjkodUI" },
+    ],
+  },
+  Sunday: { name: "Rest & Recover", emoji: "🛌", tag: "REST", exercises: [] },
+};
+
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const TAG_COLORS = { PUSH:"#ff6b00", PULL:"#7c3aed", LEGS:"#059669", UPPER:"#dc2626", LOWER:"#0284c7", CARDIO:"#d97706", REST:"#374151" };
+const TYPE_CONFIG = {
+  strength:   { col1: "Weight (kg)", col2: "Reps done",        badge: "WEIGHT", badgeColor: "#ff6b00" },
+  cardio:     { col1: "Duration",    col2: "Speed / Incline",  badge: "CARDIO", badgeColor: "#d97706" },
+  timed:      { col1: "Seconds held",col2: "Notes",            badge: "TIMED",  badgeColor: "#7c3aed" },
+  bodyweight: { col1: "Reps done",   col2: "Notes",            badge: "BW",     badgeColor: "#059669" },
+};
+
+function getTodayName() { const d = new Date().getDay(); return DAYS[d===0?6:d-1]; }
+function getDateStr()   { return new Date().toISOString().split("T")[0]; }
+function getLogs()      { try { return JSON.parse(localStorage.getItem("protocol_v2")||"{}"); } catch { return {}; } }
+function saveLogs(l)    { localStorage.setItem("protocol_v2", JSON.stringify(l)); }
+
+function App() {
+  const [selectedDay, setSelectedDay] = useState(getTodayName());
+  const [activeTab,   setActiveTab]   = useState("today");
+  const [logs,        setLogs]        = useState(getLogs());
+  const [inputVals,   setInputVals]   = useState({});
+  const [doneSets,    setDoneSets]    = useState({});
+  const [toast,       setToast]       = useState(null);
+  const [customNames, setCustomNames] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("protocol_custom_names") || "{}");
+    } catch {
+      return {};
+    }
+  });
+  const today = getTodayName();
+
+  const showToast = (msg, type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),2500); };
+
+  const updateLogs = (nl) => { setLogs(nl); saveLogs(nl); };
+
+  const updateExerciseName = (day, originalName, newName) => {
+    const updated = {
+      ...customNames,
+      [`${day}__${originalName}`]: newName
+    };
+    setCustomNames(updated);
+    localStorage.setItem("protocol_custom_names", JSON.stringify(updated));
+  };
+
+  const getExerciseName = (day, originalName) => {
+    return customNames[`${day}__${originalName}`] || originalName;
+  };
+
+  const logSet = (exName, si, v1, v2) => {
+    const key = `${getDateStr()}__${selectedDay}`;
+    const u = {...logs};
+    if (!u[key]) u[key] = {};
+    if (!u[key][exName]) u[key][exName] = [];
+    u[key][exName][si] = { v1, v2, done: true };
+    updateLogs(u);
+    setDoneSets(p => ({...p,[`${exName}_${si}`]:true}));
+    showToast(`Set ${si+1} logged ✓`);
+  };
+
+  const getSetLog = (exName, si) => {
+    return logs[`${getDateStr()}__${selectedDay}`]?.[exName]?.[si] || null;
+  };
+
+  const getDayPct = (day) => {
+    const plan = WORKOUT_PLAN[day];
+    if (!plan.exercises.length) return -1;
+    let total=0, done=0;
+    const key = `${getDateStr()}__${day}`;
+    plan.exercises.forEach(ex => {
+      for (let i=0;i<ex.sets;i++) { total++; if(logs[key]?.[getExerciseName(day, ex.name)]?.[i]?.done) done++; }
+    });
+    return total ? Math.round((done/total)*100) : 0;
+  };
+
+  const globalStats = () => {
+    let sets=0, days=new Set(), vol=0;
+    Object.entries(logs).forEach(([key,dayLog]) => {
+      days.add(key);
+      Object.values(dayLog).forEach(s => s.forEach(x => {
+        if (x?.done) {
+          sets++;
+          const w = parseFloat(x.v1||0), r = parseInt(x.v2||0);
+          if (!isNaN(w) && !isNaN(r)) vol += w*r;
+        }
+      }));
+    });
+    return { sets, days: days.size, vol: Math.round(vol) };
+  };
+
+  const stats   = globalStats();
+  const workout = WORKOUT_PLAN[selectedDay];
+  const tc      = TAG_COLORS[workout.tag] || "#ff6b00";
+
+  const exportLogs = () => {
+    const b = new Blob([JSON.stringify(logs,null,2)],{type:"application/json"});
+    const a = document.createElement("a"); a.href=URL.createObjectURL(b); a.download="protocol_logs.json"; a.click();
+    showToast("Exported ✓");
+  };
+  const importLogs = (e) => {
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ev => { try { updateLogs({...logs,...JSON.parse(ev.target.result)}); showToast("Imported ✓"); } catch { showToast("Failed","err"); } };
+    r.readAsText(f);
+  };
+
+  const INP = { flex:1, background:"#080808", border:"1px solid #222", borderRadius:6, padding:"8px 9px", color:"#e8e8e8", fontSize:12, fontFamily:"inherit", outline:"none", minWidth:0 };
+
+  return (
+    <div style={{minHeight:"100vh",background:"#080808"}}>
+
+      {/* Toast */}
+      {toast && <div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:toast.type==="err"?"#ff4444":"#00d084",color:"#fff",padding:"10px 20px",borderRadius:8,fontSize:12,zIndex:9999,fontFamily:"inherit",boxShadow:"0 4px 20px rgba(0,0,0,0.6)",whiteSpace:"nowrap"}}>{toast.msg}</div>}
+
+      {/* Header — color changes with day */}
+      <div style={{background:`linear-gradient(135deg,${tc},${tc}aa)`,padding:"22px 18px 18px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-30,right:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.07)"}}/>
+        <div style={{position:"relative",zIndex:1}}>
+          <div style={{fontSize:10,letterSpacing:3,opacity:0.75}}>THE PROTOCOL</div>
+          <div style={{fontSize:22,fontWeight:700,marginTop:2}}>WORKOUT TRACKER</div>
+          <div style={{fontSize:10,color:"rgba(255,255,255,0.6)",marginTop:4}}>{new Date().toDateString()}</div>
+        </div>
+      </div>
+
+      {/* Stats Bar */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",background:"#0f0f0f",borderBottom:"1px solid #1e1e1e"}}>
+        {[["TOTAL DAYS",stats.days],["SETS DONE",stats.sets],["VOL (kg)",stats.vol.toLocaleString()]].map(([l,v])=>(
+          <div key={l} style={{padding:"12px 0",textAlign:"center"}}>
+            <div style={{fontSize:18,fontWeight:700,color:tc}}>{v}</div>
+            <div style={{fontSize:9,letterSpacing:2,color:"#444",marginTop:2}}>{l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div style={{display:"flex",background:"#0f0f0f",borderBottom:"1px solid #1a1a1a"}}>
+        {[["today","TODAY"],["week","WEEK"],["history","HISTORY"],["backup","BACKUP"]].map(([id,label])=>(
+          <button key={id} onClick={()=>setActiveTab(id)} style={{flex:1,padding:"12px 0",fontSize:10,letterSpacing:2,background:"none",border:"none",cursor:"pointer",color:activeTab===id?tc:"#444",borderBottom:activeTab===id?`2px solid ${tc}`:"2px solid transparent",fontFamily:"inherit",fontWeight:600}}>{label}</button>
+        ))}
+      </div>
+
+      {/* ── TODAY TAB ── */}
+      {activeTab==="today" && (
+        <div style={{padding:16}}>
+
+          {/* Day scroller */}
+          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:10,marginBottom:14}}>
+            {DAYS.map(day=>{
+              const pct  = getDayPct(day);
+              const sel  = selectedDay===day;
+              const dtc  = TAG_COLORS[WORKOUT_PLAN[day].tag]||"#ff6b00";
+              return (
+                <button key={day} onClick={()=>setSelectedDay(day)} style={{flexShrink:0,padding:"8px 11px",borderRadius:8,minWidth:50,border:sel?`1.5px solid ${dtc}`:"1.5px solid #1e1e1e",background:sel?`${dtc}18`:"#0f0f0f",cursor:"pointer",textAlign:"center"}}>
+                  <div style={{fontSize:9,letterSpacing:1,color:sel?dtc:"#444",fontFamily:"inherit"}}>{day.slice(0,3).toUpperCase()}</div>
+                  <div style={{fontSize:7,color:sel?dtc:"#2a2a2a",marginTop:1,letterSpacing:1}}>{WORKOUT_PLAN[day].tag}</div>
+                  {day===today && <div style={{fontSize:7,color:dtc,marginTop:1}}>●</div>}
+                  {pct>0 && <div style={{marginTop:4,height:2,borderRadius:1,background:"#1e1e1e"}}><div style={{height:"100%",width:pct+"%",background:pct===100?"#00d084":dtc,borderRadius:1}}/></div>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Workout title */}
+          <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:26}}>{workout.emoji}</span>
+            <div>
+              <div style={{fontSize:14,fontWeight:700}}>{workout.name}</div>
+              {workout.exercises.length>0 && <div style={{fontSize:10,color:"#444",marginTop:3}}>Tap 📹 next to any exercise to watch the form video</div>}
+            </div>
+          </div>
+
+          {/* Rest day */}
+          {workout.exercises.length===0 ? (
+            <div style={{textAlign:"center",padding:"48px 20px",background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a"}}>
+              <div style={{fontSize:48}}>🛌</div>
+              <div style={{fontSize:16,fontWeight:700,marginTop:12}}>Rest Day</div>
+              <div style={{fontSize:12,color:"#444",marginTop:6,lineHeight:1.6}}>Sleep 8hrs · Eat protein · Walk 8,000 steps</div>
+            </div>
+          ) : (
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {workout.exercises.map(ex=>{
+                const cfg = TYPE_CONFIG[ex.type] || TYPE_CONFIG.strength;
+                return (
+                  <div key={ex.name} style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",overflow:"hidden"}}>
+
+                    {/* Exercise header row */}
+                    <div style={{padding:"11px 14px",borderBottom:"1px solid #141414",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <input
+                          value={getExerciseName(selectedDay, ex.name)}
+                          onChange={(e)=>updateExerciseName(selectedDay, ex.name, e.target.value)}
+                          style={{
+                            width:"100%",
+                            background:"transparent",
+                            border:"1px solid #222",
+                            borderRadius:6,
+                            padding:"6px 8px",
+                            color:"#e8e8e8",
+                            fontSize:13,
+                            fontWeight:600,
+                            fontFamily:"inherit",
+                            outline:"none"
+                          }}
+                        />
+                        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4,flexWrap:"wrap"}}>
+                          <span style={{fontSize:10,color:"#555"}}>{ex.sets} sets · {ex.target}</span>
+                          <span style={{fontSize:9,padding:"2px 6px",borderRadius:4,letterSpacing:1,background:`${cfg.badgeColor}20`,color:cfg.badgeColor}}>{cfg.badge}</span>
+                        </div>
+                      </div>
+                      {/* YouTube video button */}
+                      <a href={ex.video} target="_blank" rel="noopener noreferrer"
+                        style={{flexShrink:0,background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:8,width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>
+                        📹
+                      </a>
+                    </div>
+
+                    {/* Set rows */}
+                    <div style={{padding:"10px 14px",display:"flex",flexDirection:"column",gap:8}}>
+                      {/* Column labels */}
+                      <div style={{display:"flex",gap:7,alignItems:"center",paddingLeft:29}}>
+                        <div style={{flex:1,fontSize:9,color:"#2a2a2a",letterSpacing:1}}>{cfg.col1.toUpperCase()}</div>
+                        <div style={{flex:1,fontSize:9,color:"#2a2a2a",letterSpacing:1}}>{cfg.col2.toUpperCase()}</div>
+                        <div style={{width:36,flexShrink:0}}/>
+                      </div>
+
+                      {Array.from({length:ex.sets}).map((_,si)=>{
+                        const displayName = getExerciseName(selectedDay, ex.name);
+                        const logged = getSetLog(displayName, si);
+                        const ik     = `${displayName}_${si}`;
+                        const done   = logged?.done || doneSets[ik];
+                        return (
+                          <div key={si} style={{display:"flex",alignItems:"center",gap:7}}>
+                            <div style={{width:22,height:22,borderRadius:5,flexShrink:0,background:done?"#00d084":"#161616",display:"flex",alignItems:"center",justifyContent:"center",fontSize:done?12:9,color:done?"#fff":"#333",transition:"background 0.3s"}}>
+                              {done?"✓":si+1}
+                            </div>
+                            <input style={INP} placeholder={logged?.v1||cfg.col1} defaultValue={logged?.v1||""} onChange={e=>setInputVals(p=>({...p,[`${ik}_1`]:e.target.value}))} />
+                            <input style={INP} placeholder={logged?.v2||cfg.col2} defaultValue={logged?.v2||""} onChange={e=>setInputVals(p=>({...p,[`${ik}_2`]:e.target.value}))} />
+                            <button
+                              onClick={()=>logSet(displayName,si,inputVals[`${ik}_1`]||logged?.v1||"-",inputVals[`${ik}_2`]||logged?.v2||ex.target)}
+                              style={{background:done?tc:"#161616",border:"none",borderRadius:6,padding:"8px 10px",color:done?"#fff":"#444",cursor:"pointer",fontSize:14,flexShrink:0,transition:"background 0.3s"}}>✓
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── WEEK TAB ── */}
+      {activeTab==="week" && (
+        <div style={{padding:16}}>
+          <div style={{fontSize:10,letterSpacing:2,color:"#444",marginBottom:14}}>YOUR 6-DAY SPLIT</div>
+          {DAYS.map(day=>{
+            const pct  = getDayPct(day);
+            const plan = WORKOUT_PLAN[day];
+            const isToday = day===today;
+            const dtc  = TAG_COLORS[plan.tag]||"#ff6b00";
+            return (
+              <div key={day} onClick={()=>{setSelectedDay(day);setActiveTab("today");}}
+                style={{background:"#0f0f0f",borderRadius:12,border:isToday?`1.5px solid ${dtc}`:"1px solid #1a1a1a",marginBottom:10,cursor:"pointer",padding:"13px 15px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div>
+                    <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                      <span style={{fontSize:16}}>{plan.emoji}</span>
+                      <span style={{fontSize:13,fontWeight:600}}>{day}</span>
+                      <span style={{fontSize:8,background:`${dtc}20`,color:dtc,padding:"2px 6px",borderRadius:4,letterSpacing:1}}>{plan.tag}</span>
+                      {isToday && <span style={{fontSize:8,background:dtc,color:"#fff",padding:"2px 6px",borderRadius:4}}>TODAY</span>}
+                    </div>
+                    <div style={{fontSize:10,color:"#444",marginTop:3}}>{plan.name}</div>
+                    {plan.exercises.length>0 && <div style={{fontSize:9,color:"#333",marginTop:2}}>{plan.exercises.length} exercises</div>}
+                  </div>
+                  <div style={{fontSize:18,fontWeight:700,color:pct===100?"#00d084":pct>0?dtc:"#282828"}}>
+                    {pct===100?"✓":pct>0?pct+"%":"–"}
+                  </div>
+                </div>
+                {pct>0&&pct<100&&<div style={{marginTop:8,height:2,borderRadius:1,background:"#1a1a1a"}}><div style={{height:"100%",width:pct+"%",background:dtc,borderRadius:1}}/></div>}
+              </div>
+            );
+          })}
+
+          {/* Muscle frequency chart */}
+          <div style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",padding:14,marginTop:4}}>
+            <div style={{fontSize:10,letterSpacing:2,color:"#444",marginBottom:12}}>MUSCLE HIT FREQUENCY</div>
+            {[
+              {m:"Chest",     days:["Mon","Thu"], c:"#ff6b00"},
+              {m:"Back",      days:["Tue","Thu"], c:"#7c3aed"},
+              {m:"Shoulders", days:["Mon","Thu"], c:"#ff6b00"},
+              {m:"Biceps",    days:["Tue","Thu"], c:"#7c3aed"},
+              {m:"Triceps",   days:["Mon","Thu"], c:"#ff6b00"},
+              {m:"Rear Delts",days:["Tue","Thu"], c:"#7c3aed"},
+              {m:"Quads",     days:["Wed","Fri"], c:"#059669"},
+              {m:"Hamstrings",days:["Wed","Fri"], c:"#059669"},
+              {m:"Glutes",    days:["Wed","Fri"], c:"#059669"},
+              {m:"Core",      days:["Fri","Sat"], c:"#0284c7"},
+              {m:"Calves",    days:["Wed"],       c:"#059669"},
+            ].map(r=>(
+              <div key={r.m} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
+                <div style={{fontSize:11,color:"#666",width:90,flexShrink:0}}>{r.m}</div>
+                <div style={{display:"flex",gap:4,flex:1}}>
+                  {r.days.map(d=><span key={d} style={{fontSize:9,background:`${r.c}20`,color:r.c,padding:"2px 7px",borderRadius:4,letterSpacing:1}}>{d}</span>)}
+                </div>
+                <div style={{fontSize:11,fontWeight:700,color:r.days.length>1?"#00d084":"#555"}}>{r.days.length}×</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── HISTORY TAB ── */}
+      {activeTab==="history" && (
+        <div style={{padding:16}}>
+          <div style={{fontSize:10,letterSpacing:2,color:"#444",marginBottom:14}}>ALL SESSIONS · {Object.keys(logs).length} logged</div>
+          {Object.keys(logs).length===0 ? (
+            <div style={{textAlign:"center",padding:40,color:"#444"}}>
+              <div style={{fontSize:36,marginBottom:10}}>📋</div>
+              <div>No sessions yet.</div>
+              <div style={{fontSize:11,marginTop:6}}>Log your first workout and it appears here.</div>
+            </div>
+          ) : (
+            Object.entries(logs).sort((a,b)=>b[0].localeCompare(a[0])).map(([key,dayLog])=>{
+              const [date,day] = key.split("__");
+              const plan = WORKOUT_PLAN[day]; if(!plan) return null;
+              const htc  = TAG_COLORS[plan.tag]||"#ff6b00";
+              const totalSets = Object.values(dayLog).reduce((a,s)=>a+s.filter(Boolean).length,0);
+              return (
+                <div key={key} style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",marginBottom:10,overflow:"hidden"}}>
+                  <div style={{padding:"12px 14px",borderBottom:"1px solid #141414",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{fontSize:14}}>{plan.emoji}</span>
+                        <span style={{fontSize:13,fontWeight:600}}>{day}</span>
+                        <span style={{fontSize:8,background:`${htc}20`,color:htc,padding:"2px 6px",borderRadius:4}}>{plan.tag}</span>
+                      </div>
+                      <div style={{fontSize:10,color:"#444",marginTop:2}}>{date}</div>
+                    </div>
+                    <div style={{fontSize:11,color:htc,fontWeight:600}}>{totalSets} sets</div>
+                  </div>
+                  <div style={{padding:"10px 14px"}}>
+                    {Object.entries(dayLog).map(([exName,sets])=>(
+                      <div key={exName} style={{marginBottom:8}}>
+                        <div style={{fontSize:10,color:"#555",marginBottom:4}}>{exName}</div>
+                        <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                          {sets.filter(Boolean).map((s,i)=>(
+                            <span key={i} style={{fontSize:10,background:"#141414",border:"1px solid #1e1e1e",borderRadius:4,padding:"3px 8px",color:"#777"}}>
+                              {s.v1} · {s.v2}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* ── BACKUP TAB ── */}
+      {activeTab==="backup" && (
+        <div style={{padding:16}}>
+          <div style={{fontSize:10,letterSpacing:2,color:"#444",marginBottom:16}}>BACKUP & RESTORE</div>
+
+          <div style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",padding:16,marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:600,marginBottom:6}}>💾 Export Logs</div>
+            <div style={{fontSize:11,color:"#555",marginBottom:12}}>Downloads all your logs as a JSON file. Save it to Google Drive to keep it forever.</div>
+            <button onClick={exportLogs} style={{width:"100%",padding:14,borderRadius:10,background:"#ff6b00",border:"none",color:"#fff",fontSize:13,fontWeight:700,letterSpacing:1,cursor:"pointer",fontFamily:"inherit"}}>DOWNLOAD BACKUP</button>
+          </div>
+
+          <div style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",padding:16,marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:600,marginBottom:6}}>📂 Import Logs</div>
+            <div style={{fontSize:11,color:"#555",marginBottom:12}}>Restore a backup. Existing logs will be merged.</div>
+            <label style={{display:"block",padding:14,borderRadius:10,background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",fontSize:13,fontWeight:700,letterSpacing:1,cursor:"pointer",textAlign:"center",fontFamily:"inherit"}}>
+              SELECT BACKUP FILE
+              <input type="file" accept=".json" onChange={importLogs} style={{display:"none"}}/>
+            </label>
+          </div>
+
+          <div style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",padding:16,marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:600,marginBottom:8}}>📱 Add to Home Screen</div>
+            <div style={{fontSize:11,color:"#666",lineHeight:1.9}}>
+              <div>1. Open this file in Chrome on your phone</div>
+              <div>2. Tap the ⋮ menu (top right)</div>
+              <div>3. Tap "Add to Home Screen"</div>
+              <div>4. Opens like a real app ✓</div>
+            </div>
+          </div>
+
+          <div style={{padding:12,background:"#0a0a0a",borderRadius:8,border:"1px solid #1a1a1a"}}>
+            <div style={{fontSize:10,color:"#333",letterSpacing:1}}>STORAGE INFO</div>
+            <div style={{fontSize:11,color:"#555",marginTop:4}}>{Object.keys(logs).length} sessions saved · {(JSON.stringify(logs).length/1024).toFixed(1)} KB used</div>
+          </div>
+        </div>
+      )}
+
+      <div style={{height:50}}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
