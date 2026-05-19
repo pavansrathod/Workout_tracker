@@ -1,8 +1,8 @@
 <!DOCTYPE html><html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LiftLog Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Dynamic Workout Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -11,352 +11,444 @@
   margin:0;
   padding:0;
   box-sizing:border-box;
-}body{ background:#0a0a0a; color:white; font-family:Inter,Arial,sans-serif; -webkit-tap-highlight-color:transparent; }
+}body{ background:#080808; color:#e8e8e8; font-family:Arial, sans-serif; -webkit-tap-highlight-color:transparent; }
 
 ::-webkit-scrollbar{ display:none; }
 
-button,input{ font-family:inherit; }
-
-input{ outline:none; }
-
-.app{ min-height:100vh; max-width:700px; margin:auto; padding-bottom:100px; }
-
-.header{ padding:28px 20px; background:linear-gradient(135deg,#ff6b00,#ff8c42); }
-
-.logo{ font-size:12px; letter-spacing:3px; opacity:0.8; }
-
-.title{ font-size:30px; font-weight:800; margin-top:6px; }
-
-.subtitle{ margin-top:8px; opacity:0.8; font-size:14px; }
-
-.stats{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; padding:15px; }
-
-.stat-card{ background:#111; border:1px solid #1f1f1f; border-radius:16px; padding:18px 12px; text-align:center; }
-
-.stat-value{ font-size:24px; font-weight:800; color:#ff6b00; }
-
-.stat-label{ margin-top:6px; font-size:11px; color:#666; letter-spacing:1px; }
-
-.section{ padding:0 15px; }
-
-.section-title{ margin:18px 0 12px; font-size:12px; color:#666; letter-spacing:2px; }
-
-.exercise-card{ background:#111; border:1px solid #1f1f1f; border-radius:18px; padding:15px; margin-bottom:14px; }
-
-.exercise-top{ display:flex; justify-content:space-between; gap:10px; align-items:center; }
-
-.exercise-name{ flex:1; background:#1a1a1a; border:1px solid #2a2a2a; color:white; border-radius:10px; padding:12px; font-size:15px; font-weight:600; }
-
-.icon-btn{ width:42px; height:42px; border:none; border-radius:12px; cursor:pointer; font-size:18px; }
-
-.delete-btn{ background:#2a1111; color:#ff4d4d; }
-
-.add-set-btn{ width:100%; margin-top:12px; background:#1b1b1b; border:1px dashed #333; color:#999; padding:12px; border-radius:12px; cursor:pointer; font-weight:700; }
-
-.set-row{ display:grid; grid-template-columns:50px 1fr 1fr 50px; gap:8px; margin-top:10px; align-items:center; }
-
-.set-badge{ background:#1d1d1d; border-radius:10px; height:44px; display:flex; align-items:center; justify-content:center; color:#888; font-weight:700; }
-
-.set-input{ background:#1a1a1a; border:1px solid #2a2a2a; color:white; border-radius:10px; padding:12px; width:100%; }
-
-.check-btn{ height:44px; border:none; border-radius:10px; background:#1f1f1f; color:#666; font-weight:800; cursor:pointer; }
-
-.check-btn.done{ background:#00c26f; color:white; }
-
-.bottom-bar{ position:fixed; bottom:0; left:0; right:0; background:#0d0d0d; border-top:1px solid #1f1f1f; padding:14px; }
-
-.add-exercise{ width:100%; border:none; background:#ff6b00; color:white; font-size:15px; font-weight:800; padding:16px; border-radius:16px; cursor:pointer; }
-
-.empty{ background:#111; border:1px dashed #333; border-radius:18px; padding:40px 20px; text-align:center; color:#666; }
-
-.small{ font-size:12px; margin-top:8px; } </style>
+button,input{ font-family:inherit; } </style>
 
 </head>
 <body>
 <div id="root"></div><script type="text/babel">
-const {useState,useEffect} = React;
+const { useState, useEffect } = React;
 
-const defaultWorkout = [
-  {
-    id:Date.now(),
-    name:'Bench Press',
-    sets:[
-      {weight:'20',reps:'12',done:false},
-      {weight:'20',reps:'10',done:false}
-    ]
+const DEFAULT_PLAN = {
+  Monday: {
+    name: "Push — Chest + Shoulders + Triceps",
+    emoji: "💪",
+    tag: "PUSH",
+    exercises: [
+      { name: "Dumbbell Bench Press", sets: 4, target: "8-12", type: "strength", video: "https://www.youtube.com/watch?v=VmB1G1K7v94" },
+      { name: "Incline Dumbbell Press", sets: 3, target: "10-12", type: "strength", video: "https://www.youtube.com/watch?v=8iPEnn-ltC8" },
+      { name: "Dumbbell Shoulder Press", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=qEwKCR5JCog" },
+      { name: "Dumbbell Lateral Raises", sets: 3, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=3VcKaXpzqRo" },
+      { name: "Overhead Tricep Extension", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=nRiJVZDpdL0" },
+      { name: "Push Ups", sets: 2, target: "Failure", type: "bodyweight", video: "https://www.youtube.com/watch?v=IODxDxX7oi4" },
+    ],
   },
-  {
-    id:Date.now()+1,
-    name:'Incline Dumbbell Press',
-    sets:[
-      {weight:'15',reps:'12',done:false}
-    ]
-  }
-]
+
+  Tuesday: {
+    name: "Pull — Back + Biceps",
+    emoji: "🏋️",
+    tag: "PULL",
+    exercises: [
+      { name: "Dumbbell Bent Over Row", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=roCP6wCXPqo" },
+      { name: "Single Arm Dumbbell Row", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=pYcpY20QaE8" },
+      { name: "Band Lat Pulldown", sets: 4, target: "12-15", type: "strength", video: "https://www.youtube.com/watch?v=CAwf7n6Luuc" },
+      { name: "Chest Supported DB Row", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=MgCOXiqULQM" },
+      { name: "Hammer Curls", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=zC3nLlEvin4" },
+      { name: "Band Face Pulls", sets: 3, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=rep-qVOkqgk" },
+    ],
+  },
+
+  Wednesday: {
+    name: "Legs",
+    emoji: "🦵",
+    tag: "LEGS",
+    exercises: [
+      { name: "Kettlebell Goblet Squat", sets: 4, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=MxsFDhcyFyE" },
+      { name: "Bulgarian Split Squat", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=2C-uNgKwPLE" },
+      { name: "Dumbbell Romanian Deadlift", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=JCXUYuzwNrM" },
+      { name: "Dumbbell Reverse Lunges", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=xrjMuqyR2yg" },
+      { name: "Standing Calf Raises", sets: 4, target: "20", type: "bodyweight", video: "https://www.youtube.com/watch?v=gwLzBJYoWlI" },
+      { name: "Plank", sets: 3, target: "45 sec", type: "timed", video: "https://www.youtube.com/watch?v=ASdvN_XEl_c" },
+    ],
+  },
+
+  Thursday: {
+    name: "Upper",
+    emoji: "🔥",
+    tag: "UPPER",
+    exercises: [
+      { name: "Incline Dumbbell Press", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=8iPEnn-ltC8" },
+      { name: "Chest Supported DB Row", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=MgCOXiqULQM" },
+      { name: "Arnold Press", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=6Z15_WdXmVw" },
+      { name: "Band Lat Pulldown", sets: 3, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=CAwf7n6Luuc" },
+      { name: "Close Grip Dumbbell Press", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=LfyQBUKR8SE" },
+      { name: "Dumbbell Bicep Curls", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=ykJmrZ5v0Oo" },
+    ],
+  },
+
+  Friday: {
+    name: "Lower",
+    emoji: "⚡",
+    tag: "LOWER",
+    exercises: [
+      { name: "Dumbbell Sumo Squat", sets: 4, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=_-MbgEeqmsc" },
+      { name: "Dumbbell Stiff Leg Deadlift", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=1uDiW5--rAE" },
+      { name: "Step Ups", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=dQqApCGd5Ss" },
+      { name: "Single Leg Romanian Deadlift", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=84P-r7XXudM" },
+      { name: "Seated Calf Raises", sets: 4, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=YMmgqO8Jo-k" },
+      { name: "Hollow Body Hold", sets: 3, target: "30 sec", type: "timed", video: "https://www.youtube.com/watch?v=LlDNef_Ztsc" },
+    ],
+  },
+
+  Saturday: {
+    name: "Cardio + Core",
+    emoji: "🏃",
+    tag: "CARDIO",
+    exercises: [
+      { name: "Incline Treadmill Walk", sets: 1, target: "30-45 mins", type: "cardio", video: "https://www.youtube.com/watch?v=vGvAFO_EwUQ" },
+      { name: "Jump Rope", sets: 10, target: "1 min", type: "cardio", video: "https://www.youtube.com/watch?v=1BZM6j1LALk" },
+      { name: "Mountain Climbers", sets: 3, target: "30 sec", type: "bodyweight", video: "https://www.youtube.com/watch?v=nmwgirgXLYM" },
+      { name: "Lying Leg Raises", sets: 3, target: "15", type: "bodyweight", video: "https://www.youtube.com/watch?v=JB2oyawG9KI" },
+      { name: "Russian Twists", sets: 3, target: "20", type: "bodyweight", video: "https://www.youtube.com/watch?v=wkD8rjkodUI" },
+      { name: "Dead Bug", sets: 3, target: "15", type: "bodyweight", video: "https://www.youtube.com/watch?v=g_BYB0R-4Ws" },
+    ],
+  },
+
+  Sunday: {
+    name: "Rest & Recover",
+    emoji: "🛌",
+    tag: "REST",
+    exercises: [],
+  },
+};
+
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+const COLORS = {
+  PUSH: "#ff6b00",
+  PULL: "#7c3aed",
+  LEGS: "#059669",
+  UPPER: "#dc2626",
+  LOWER: "#0284c7",
+  CARDIO: "#d97706",
+  REST: "#374151",
+};
 
 function App(){
+  const [selectedDay, setSelectedDay] = useState("Monday");
 
-  const [workout,setWorkout] = useState(()=>{
-    const saved = localStorage.getItem('dynamic_workout');
-    return saved ? JSON.parse(saved) : defaultWorkout;
+  const [plan, setPlan] = useState(() => {
+    const saved = localStorage.getItem("dynamic_plan");
+    return saved ? JSON.parse(saved) : DEFAULT_PLAN;
   });
 
-  useEffect(()=>{
-    localStorage.setItem('dynamic_workout',JSON.stringify(workout));
-  },[workout]);
+  useEffect(() => {
+    localStorage.setItem("dynamic_plan", JSON.stringify(plan));
+  }, [plan]);
 
-  const totalSets = workout.reduce((acc,ex)=>acc+ex.sets.length,0);
-  const completedSets = workout.reduce((acc,ex)=>acc+ex.sets.filter(s=>s.done).length,0);
+  const workout = plan[selectedDay];
+  const color = COLORS[workout.tag];
 
-  const volume = workout.reduce((acc,ex)=>{
-    return acc + ex.sets.reduce((a,s)=>{
-      return a + ((Number(s.weight)||0) * (Number(s.reps)||0))
-    },0)
-  },0)
+  const updateExerciseName = (index, value) => {
+    const updated = {...plan};
+    updated[selectedDay].exercises[index].name = value;
+    setPlan(updated);
+  };
 
-  const addExercise = ()=>{
-    const newExercise = {
-      id:Date.now(),
-      name:'New Exercise',
-      sets:[
-        {weight:'',reps:'',done:false}
-      ]
+  const addExercise = () => {
+    const updated = {...plan};
+
+    updated[selectedDay].exercises.push({
+      name: "New Exercise",
+      sets: 3,
+      target: "10-12",
+      type: "strength",
+      video: ""
+    });
+
+    setPlan(updated);
+  };
+
+  const deleteExercise = (index) => {
+    const updated = {...plan};
+    updated[selectedDay].exercises.splice(index, 1);
+    setPlan(updated);
+  };
+
+  const addSet = (index) => {
+    const updated = {...plan};
+    updated[selectedDay].exercises[index].sets += 1;
+    setPlan(updated);
+  };
+
+  const removeSet = (index) => {
+    const updated = {...plan};
+
+    if(updated[selectedDay].exercises[index].sets > 1){
+      updated[selectedDay].exercises[index].sets -= 1;
     }
 
-    setWorkout([...workout,newExercise]);
-  }
-
-  const deleteExercise = (id)=>{
-    setWorkout(workout.filter(ex=>ex.id !== id));
-  }
-
-  const updateExerciseName = (id,value)=>{
-    setWorkout(workout.map(ex=>{
-      if(ex.id === id){
-        return {...ex,name:value}
-      }
-      return ex;
-    }))
-  }
-
-  const addSet = (exerciseId)=>{
-    setWorkout(workout.map(ex=>{
-      if(ex.id === exerciseId){
-        return {
-          ...ex,
-          sets:[...ex.sets,{weight:'',reps:'',done:false}]
-        }
-      }
-      return ex;
-    }))
-  }
-
-  const deleteSet = (exerciseId,setIndex)=>{
-    setWorkout(workout.map(ex=>{
-      if(ex.id === exerciseId){
-        return {
-          ...ex,
-          sets:ex.sets.filter((_,i)=>i !== setIndex)
-        }
-      }
-      return ex;
-    }))
-  }
-
-  const updateSet = (exerciseId,setIndex,field,value)=>{
-    setWorkout(workout.map(ex=>{
-      if(ex.id === exerciseId){
-
-        const updatedSets = ex.sets.map((set,i)=>{
-          if(i === setIndex){
-            return {
-              ...set,
-              [field]:value
-            }
-          }
-
-          return set;
-        })
-
-        return {
-          ...ex,
-          sets:updatedSets
-        }
-      }
-
-      return ex;
-    }))
-  }
-
-  const toggleDone = (exerciseId,setIndex)=>{
-    setWorkout(workout.map(ex=>{
-      if(ex.id === exerciseId){
-
-        const updatedSets = ex.sets.map((set,i)=>{
-          if(i === setIndex){
-            return {
-              ...set,
-              done:!set.done
-            }
-          }
-
-          return set;
-        })
-
-        return {
-          ...ex,
-          sets:updatedSets
-        }
-      }
-
-      return ex;
-    }))
-  }
+    setPlan(updated);
+  };
 
   return (
-    <div className="app">
+    <div>
 
-      <div className="header">
-        <div className="logo">LIFTLOG PRO</div>
-        <div className="title">Workout Tracker</div>
-        <div className="subtitle">Dynamic • Fast • Clean</div>
+      <div style={{
+        background: color,
+        padding: "22px",
+        fontWeight: "bold",
+        fontSize: "26px"
+      }}>
+        Dynamic Workout Tracker
       </div>
 
-      <div className="stats">
-
-        <div className="stat-card">
-          <div className="stat-value">{workout.length}</div>
-          <div className="stat-label">EXERCISES</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-value">{completedSets}/{totalSets}</div>
-          <div className="stat-label">SETS</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-value">{volume}</div>
-          <div className="stat-label">VOLUME</div>
-        </div>
-
+      <div style={{
+        display: "flex",
+        gap: "8px",
+        overflowX: "auto",
+        padding: "14px"
+      }}>
+        {DAYS.map(day => (
+          <button
+            key={day}
+            onClick={() => setSelectedDay(day)}
+            style={{
+              background: selectedDay === day ? color : "#111",
+              color: "white",
+              border: "1px solid #222",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              cursor: "pointer",
+              minWidth: "90px"
+            }}
+          >
+            {day}
+          </button>
+        ))}
       </div>
 
-      <div className="section">
+      <div style={{ padding: "16px" }}>
 
-        <div className="section-title">TODAY WORKOUT</div>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          marginBottom: "18px"
+        }}>
+          <div style={{ fontSize: "34px" }}>
+            {workout.emoji}
+          </div>
 
-        {
-          workout.length === 0 && (
-            <div className="empty">
-              <div>No exercises added</div>
-              <div className="small">Tap the button below to create one</div>
+          <div>
+            <div style={{ fontSize: "20px", fontWeight: "bold" }}>
+              {workout.name}
             </div>
-          )
-        }
+
+            <div style={{ color: "#777", marginTop: "4px" }}>
+              {workout.exercises.length} exercises
+            </div>
+          </div>
+        </div>
 
         {
-          workout.map((exercise)=>(
-            <div className="exercise-card" key={exercise.id}>
-
-              <div className="exercise-top">
-
-                <input
-                  className="exercise-name"
-                  value={exercise.name}
-                  onChange={(e)=>updateExerciseName(exercise.id,e.target.value)}
-                />
-
-                <button
-                  className="icon-btn delete-btn"
-                  onClick={()=>deleteExercise(exercise.id)}
-                >
-                  🗑
-                </button>
-
+          workout.exercises.length === 0 ? (
+            <div style={{
+              background: "#111",
+              padding: "40px",
+              borderRadius: "14px",
+              textAlign: "center"
+            }}>
+              <div style={{ fontSize: "60px" }}>🛌</div>
+              <div style={{ marginTop: "10px", fontSize: "22px" }}>
+                Rest Day
               </div>
-
+            </div>
+          ) : (
+            <>
               {
-                exercise.sets.map((set,setIndex)=>(
-                  <div className="set-row" key={setIndex}>
+                workout.exercises.map((ex, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      background: "#111",
+                      border: "1px solid #1f1f1f",
+                      borderRadius: "14px",
+                      padding: "16px",
+                      marginBottom: "14px"
+                    }}
+                  >
 
-                    <div className="set-badge">
-                      {setIndex+1}
+                    <input
+                      value={ex.name}
+                      onChange={(e) => updateExerciseName(index, e.target.value)}
+                      style={{
+                        width: "100%",
+                        background: "#1a1a1a",
+                        border: "1px solid #333",
+                        padding: "12px",
+                        borderRadius: "10px",
+                        color: "white",
+                        fontSize: "16px",
+                        marginBottom: "10px"
+                      }}
+                    />
+
+                    <div style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "12px",
+                      flexWrap: "wrap",
+                      gap: "10px"
+                    }}>
+                      <div style={{ color: "#777" }}>
+                        {ex.sets} sets • {ex.target}
+                      </div>
+
+                      {
+                        ex.video && (
+                          <a
+                            href={ex.video}
+                            target="_blank"
+                            style={{
+                              background: "#222",
+                              color: "white",
+                              textDecoration: "none",
+                              padding: "8px 12px",
+                              borderRadius: "8px"
+                            }}
+                          >
+                            📹 Form
+                          </a>
+                        )
+                      }
                     </div>
 
-                    <input
-                      className="set-input"
-                      placeholder="Weight"
-                      value={set.weight}
-                      onChange={(e)=>updateSet(exercise.id,setIndex,'weight',e.target.value)}
-                    />
+                    <div style={{
+                      display: "flex",
+                      gap: "8px",
+                      marginBottom: "14px",
+                      flexWrap: "wrap"
+                    }}>
+                      <button
+                        onClick={() => addSet(index)}
+                        style={{
+                          background: "#00d084",
+                          border: "none",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          color: "white",
+                          cursor: "pointer"
+                        }}
+                      >
+                        + Set
+                      </button>
 
-                    <input
-                      className="set-input"
-                      placeholder="Reps"
-                      value={set.reps}
-                      onChange={(e)=>updateSet(exercise.id,setIndex,'reps',e.target.value)}
-                    />
+                      <button
+                        onClick={() => removeSet(index)}
+                        style={{
+                          background: "#ff8800",
+                          border: "none",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          color: "white",
+                          cursor: "pointer"
+                        }}
+                      >
+                        - Set
+                      </button>
 
-                    <button
-                      className={`check-btn ${set.done ? 'done' : ''}`}
-                      onClick={()=>toggleDone(exercise.id,setIndex)}
-                    >
-                      {set.done ? '✓' : '○'}
-                    </button>
+                      <button
+                        onClick={() => deleteExercise(index)}
+                        style={{
+                          background: "#ff4444",
+                          border: "none",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          color: "white",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Delete Exercise
+                      </button>
+                    </div>
 
-                    <div></div>
-                    <button
-                      style={{
-                        gridColumn:'2/4',
-                        background:'#191919',
-                        border:'1px solid #2a2a2a',
-                        color:'#777',
-                        borderRadius:'10px',
-                        padding:'10px',
-                        cursor:'pointer'
-                      }}
-                      onClick={()=>deleteSet(exercise.id,setIndex)}
-                    >
-                      Delete Set
-                    </button>
+                    {
+                      Array.from({ length: ex.sets }).map((_, setIndex) => (
+                        <div
+                          key={setIndex}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "60px 1fr 1fr",
+                            gap: "8px",
+                            marginBottom: "8px"
+                          }}
+                        >
+                          <div style={{
+                            background: color,
+                            borderRadius: "8px",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            fontWeight: "bold"
+                          }}>
+                            {setIndex + 1}
+                          </div>
 
+                          <input
+                            placeholder="Weight"
+                            style={{
+                              background: "#1a1a1a",
+                              border: "1px solid #333",
+                              padding: "12px",
+                              borderRadius: "8px",
+                              color: "white"
+                            }}
+                          />
+
+                          <input
+                            placeholder="Reps"
+                            style={{
+                              background: "#1a1a1a",
+                              border: "1px solid #333",
+                              padding: "12px",
+                              borderRadius: "8px",
+                              color: "white"
+                            }}
+                          />
+                        </div>
+                      ))
+                    }
                   </div>
                 ))
               }
 
               <button
-                className="add-set-btn"
-                onClick={()=>addSet(exercise.id)}
+                onClick={addExercise}
+                style={{
+                  width: "100%",
+                  padding: "16px",
+                  background: "#00d084",
+                  border: "none",
+                  borderRadius: "14px",
+                  color: "white",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  marginTop: "8px"
+                }}
               >
-                + ADD SET
+                + Add Exercise
               </button>
-
-            </div>
-          ))
+            </>
+          )
         }
-
       </div>
-
-      <div className="bottom-bar">
-        <button
-          className="add-exercise"
-          onClick={addExercise}
-        >
-          + ADD EXERCISE
-        </button>
-      </div>
-
     </div>
-  )
+  );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />)
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script></body>
 </html><!DOCTYPE html><html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LiftLog Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Dynamic Workout Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -365,345 +457,437 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App />)
   margin:0;
   padding:0;
   box-sizing:border-box;
-}body{ background:#0a0a0a; color:white; font-family:Inter,Arial,sans-serif; -webkit-tap-highlight-color:transparent; }
+}body{ background:#080808; color:#e8e8e8; font-family:Arial, sans-serif; -webkit-tap-highlight-color:transparent; }
 
 ::-webkit-scrollbar{ display:none; }
 
-button,input{ font-family:inherit; }
-
-input{ outline:none; }
-
-.app{ min-height:100vh; max-width:700px; margin:auto; padding-bottom:100px; }
-
-.header{ padding:28px 20px; background:linear-gradient(135deg,#ff6b00,#ff8c42); }
-
-.logo{ font-size:12px; letter-spacing:3px; opacity:0.8; }
-
-.title{ font-size:30px; font-weight:800; margin-top:6px; }
-
-.subtitle{ margin-top:8px; opacity:0.8; font-size:14px; }
-
-.stats{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; padding:15px; }
-
-.stat-card{ background:#111; border:1px solid #1f1f1f; border-radius:16px; padding:18px 12px; text-align:center; }
-
-.stat-value{ font-size:24px; font-weight:800; color:#ff6b00; }
-
-.stat-label{ margin-top:6px; font-size:11px; color:#666; letter-spacing:1px; }
-
-.section{ padding:0 15px; }
-
-.section-title{ margin:18px 0 12px; font-size:12px; color:#666; letter-spacing:2px; }
-
-.exercise-card{ background:#111; border:1px solid #1f1f1f; border-radius:18px; padding:15px; margin-bottom:14px; }
-
-.exercise-top{ display:flex; justify-content:space-between; gap:10px; align-items:center; }
-
-.exercise-name{ flex:1; background:#1a1a1a; border:1px solid #2a2a2a; color:white; border-radius:10px; padding:12px; font-size:15px; font-weight:600; }
-
-.icon-btn{ width:42px; height:42px; border:none; border-radius:12px; cursor:pointer; font-size:18px; }
-
-.delete-btn{ background:#2a1111; color:#ff4d4d; }
-
-.add-set-btn{ width:100%; margin-top:12px; background:#1b1b1b; border:1px dashed #333; color:#999; padding:12px; border-radius:12px; cursor:pointer; font-weight:700; }
-
-.set-row{ display:grid; grid-template-columns:50px 1fr 1fr 50px; gap:8px; margin-top:10px; align-items:center; }
-
-.set-badge{ background:#1d1d1d; border-radius:10px; height:44px; display:flex; align-items:center; justify-content:center; color:#888; font-weight:700; }
-
-.set-input{ background:#1a1a1a; border:1px solid #2a2a2a; color:white; border-radius:10px; padding:12px; width:100%; }
-
-.check-btn{ height:44px; border:none; border-radius:10px; background:#1f1f1f; color:#666; font-weight:800; cursor:pointer; }
-
-.check-btn.done{ background:#00c26f; color:white; }
-
-.bottom-bar{ position:fixed; bottom:0; left:0; right:0; background:#0d0d0d; border-top:1px solid #1f1f1f; padding:14px; }
-
-.add-exercise{ width:100%; border:none; background:#ff6b00; color:white; font-size:15px; font-weight:800; padding:16px; border-radius:16px; cursor:pointer; }
-
-.empty{ background:#111; border:1px dashed #333; border-radius:18px; padding:40px 20px; text-align:center; color:#666; }
-
-.small{ font-size:12px; margin-top:8px; } </style>
+button,input{ font-family:inherit; } </style>
 
 </head>
 <body>
 <div id="root"></div><script type="text/babel">
-const {useState,useEffect} = React;
+const { useState, useEffect } = React;
 
-const defaultWorkout = [
-  {
-    id:Date.now(),
-    name:'Bench Press',
-    sets:[
-      {weight:'20',reps:'12',done:false},
-      {weight:'20',reps:'10',done:false}
-    ]
+const DEFAULT_PLAN = {
+  Monday: {
+    name: "Push — Chest + Shoulders + Triceps",
+    emoji: "💪",
+    tag: "PUSH",
+    exercises: [
+      { name: "Dumbbell Bench Press", sets: 4, target: "8-12", type: "strength", video: "https://www.youtube.com/watch?v=VmB1G1K7v94" },
+      { name: "Incline Dumbbell Press", sets: 3, target: "10-12", type: "strength", video: "https://www.youtube.com/watch?v=8iPEnn-ltC8" },
+      { name: "Dumbbell Shoulder Press", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=qEwKCR5JCog" },
+      { name: "Dumbbell Lateral Raises", sets: 3, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=3VcKaXpzqRo" },
+      { name: "Overhead Tricep Extension", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=nRiJVZDpdL0" },
+      { name: "Push Ups", sets: 2, target: "Failure", type: "bodyweight", video: "https://www.youtube.com/watch?v=IODxDxX7oi4" },
+    ],
   },
-  {
-    id:Date.now()+1,
-    name:'Incline Dumbbell Press',
-    sets:[
-      {weight:'15',reps:'12',done:false}
-    ]
-  }
-]
+
+  Tuesday: {
+    name: "Pull — Back + Biceps",
+    emoji: "🏋️",
+    tag: "PULL",
+    exercises: [
+      { name: "Dumbbell Bent Over Row", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=roCP6wCXPqo" },
+      { name: "Single Arm Dumbbell Row", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=pYcpY20QaE8" },
+      { name: "Band Lat Pulldown", sets: 4, target: "12-15", type: "strength", video: "https://www.youtube.com/watch?v=CAwf7n6Luuc" },
+      { name: "Chest Supported DB Row", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=MgCOXiqULQM" },
+      { name: "Hammer Curls", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=zC3nLlEvin4" },
+      { name: "Band Face Pulls", sets: 3, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=rep-qVOkqgk" },
+    ],
+  },
+
+  Wednesday: {
+    name: "Legs",
+    emoji: "🦵",
+    tag: "LEGS",
+    exercises: [
+      { name: "Kettlebell Goblet Squat", sets: 4, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=MxsFDhcyFyE" },
+      { name: "Bulgarian Split Squat", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=2C-uNgKwPLE" },
+      { name: "Dumbbell Romanian Deadlift", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=JCXUYuzwNrM" },
+      { name: "Dumbbell Reverse Lunges", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=xrjMuqyR2yg" },
+      { name: "Standing Calf Raises", sets: 4, target: "20", type: "bodyweight", video: "https://www.youtube.com/watch?v=gwLzBJYoWlI" },
+      { name: "Plank", sets: 3, target: "45 sec", type: "timed", video: "https://www.youtube.com/watch?v=ASdvN_XEl_c" },
+    ],
+  },
+
+  Thursday: {
+    name: "Upper",
+    emoji: "🔥",
+    tag: "UPPER",
+    exercises: [
+      { name: "Incline Dumbbell Press", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=8iPEnn-ltC8" },
+      { name: "Chest Supported DB Row", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=MgCOXiqULQM" },
+      { name: "Arnold Press", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=6Z15_WdXmVw" },
+      { name: "Band Lat Pulldown", sets: 3, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=CAwf7n6Luuc" },
+      { name: "Close Grip Dumbbell Press", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=LfyQBUKR8SE" },
+      { name: "Dumbbell Bicep Curls", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=ykJmrZ5v0Oo" },
+    ],
+  },
+
+  Friday: {
+    name: "Lower",
+    emoji: "⚡",
+    tag: "LOWER",
+    exercises: [
+      { name: "Dumbbell Sumo Squat", sets: 4, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=_-MbgEeqmsc" },
+      { name: "Dumbbell Stiff Leg Deadlift", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=1uDiW5--rAE" },
+      { name: "Step Ups", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=dQqApCGd5Ss" },
+      { name: "Single Leg Romanian Deadlift", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=84P-r7XXudM" },
+      { name: "Seated Calf Raises", sets: 4, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=YMmgqO8Jo-k" },
+      { name: "Hollow Body Hold", sets: 3, target: "30 sec", type: "timed", video: "https://www.youtube.com/watch?v=LlDNef_Ztsc" },
+    ],
+  },
+
+  Saturday: {
+    name: "Cardio + Core",
+    emoji: "🏃",
+    tag: "CARDIO",
+    exercises: [
+      { name: "Incline Treadmill Walk", sets: 1, target: "30-45 mins", type: "cardio", video: "https://www.youtube.com/watch?v=vGvAFO_EwUQ" },
+      { name: "Jump Rope", sets: 10, target: "1 min", type: "cardio", video: "https://www.youtube.com/watch?v=1BZM6j1LALk" },
+      { name: "Mountain Climbers", sets: 3, target: "30 sec", type: "bodyweight", video: "https://www.youtube.com/watch?v=nmwgirgXLYM" },
+      { name: "Lying Leg Raises", sets: 3, target: "15", type: "bodyweight", video: "https://www.youtube.com/watch?v=JB2oyawG9KI" },
+      { name: "Russian Twists", sets: 3, target: "20", type: "bodyweight", video: "https://www.youtube.com/watch?v=wkD8rjkodUI" },
+      { name: "Dead Bug", sets: 3, target: "15", type: "bodyweight", video: "https://www.youtube.com/watch?v=g_BYB0R-4Ws" },
+    ],
+  },
+
+  Sunday: {
+    name: "Rest & Recover",
+    emoji: "🛌",
+    tag: "REST",
+    exercises: [],
+  },
+};
+
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+const COLORS = {
+  PUSH: "#ff6b00",
+  PULL: "#7c3aed",
+  LEGS: "#059669",
+  UPPER: "#dc2626",
+  LOWER: "#0284c7",
+  CARDIO: "#d97706",
+  REST: "#374151",
+};
 
 function App(){
+  const [selectedDay, setSelectedDay] = useState("Monday");
 
-  const [workout,setWorkout] = useState(()=>{
-    const saved = localStorage.getItem('dynamic_workout');
-    return saved ? JSON.parse(saved) : defaultWorkout;
+  const [plan, setPlan] = useState(() => {
+    const saved = localStorage.getItem("dynamic_plan");
+    return saved ? JSON.parse(saved) : DEFAULT_PLAN;
   });
 
-  useEffect(()=>{
-    localStorage.setItem('dynamic_workout',JSON.stringify(workout));
-  },[workout]);
+  useEffect(() => {
+    localStorage.setItem("dynamic_plan", JSON.stringify(plan));
+  }, [plan]);
 
-  const totalSets = workout.reduce((acc,ex)=>acc+ex.sets.length,0);
-  const completedSets = workout.reduce((acc,ex)=>acc+ex.sets.filter(s=>s.done).length,0);
+  const workout = plan[selectedDay];
+  const color = COLORS[workout.tag];
 
-  const volume = workout.reduce((acc,ex)=>{
-    return acc + ex.sets.reduce((a,s)=>{
-      return a + ((Number(s.weight)||0) * (Number(s.reps)||0))
-    },0)
-  },0)
+  const updateExerciseName = (index, value) => {
+    const updated = {...plan};
+    updated[selectedDay].exercises[index].name = value;
+    setPlan(updated);
+  };
 
-  const addExercise = ()=>{
-    const newExercise = {
-      id:Date.now(),
-      name:'New Exercise',
-      sets:[
-        {weight:'',reps:'',done:false}
-      ]
+  const addExercise = () => {
+    const updated = {...plan};
+
+    updated[selectedDay].exercises.push({
+      name: "New Exercise",
+      sets: 3,
+      target: "10-12",
+      type: "strength",
+      video: ""
+    });
+
+    setPlan(updated);
+  };
+
+  const deleteExercise = (index) => {
+    const updated = {...plan};
+    updated[selectedDay].exercises.splice(index, 1);
+    setPlan(updated);
+  };
+
+  const addSet = (index) => {
+    const updated = {...plan};
+    updated[selectedDay].exercises[index].sets += 1;
+    setPlan(updated);
+  };
+
+  const removeSet = (index) => {
+    const updated = {...plan};
+
+    if(updated[selectedDay].exercises[index].sets > 1){
+      updated[selectedDay].exercises[index].sets -= 1;
     }
 
-    setWorkout([...workout,newExercise]);
-  }
-
-  const deleteExercise = (id)=>{
-    setWorkout(workout.filter(ex=>ex.id !== id));
-  }
-
-  const updateExerciseName = (id,value)=>{
-    setWorkout(workout.map(ex=>{
-      if(ex.id === id){
-        return {...ex,name:value}
-      }
-      return ex;
-    }))
-  }
-
-  const addSet = (exerciseId)=>{
-    setWorkout(workout.map(ex=>{
-      if(ex.id === exerciseId){
-        return {
-          ...ex,
-          sets:[...ex.sets,{weight:'',reps:'',done:false}]
-        }
-      }
-      return ex;
-    }))
-  }
-
-  const deleteSet = (exerciseId,setIndex)=>{
-    setWorkout(workout.map(ex=>{
-      if(ex.id === exerciseId){
-        return {
-          ...ex,
-          sets:ex.sets.filter((_,i)=>i !== setIndex)
-        }
-      }
-      return ex;
-    }))
-  }
-
-  const updateSet = (exerciseId,setIndex,field,value)=>{
-    setWorkout(workout.map(ex=>{
-      if(ex.id === exerciseId){
-
-        const updatedSets = ex.sets.map((set,i)=>{
-          if(i === setIndex){
-            return {
-              ...set,
-              [field]:value
-            }
-          }
-
-          return set;
-        })
-
-        return {
-          ...ex,
-          sets:updatedSets
-        }
-      }
-
-      return ex;
-    }))
-  }
-
-  const toggleDone = (exerciseId,setIndex)=>{
-    setWorkout(workout.map(ex=>{
-      if(ex.id === exerciseId){
-
-        const updatedSets = ex.sets.map((set,i)=>{
-          if(i === setIndex){
-            return {
-              ...set,
-              done:!set.done
-            }
-          }
-
-          return set;
-        })
-
-        return {
-          ...ex,
-          sets:updatedSets
-        }
-      }
-
-      return ex;
-    }))
-  }
+    setPlan(updated);
+  };
 
   return (
-    <div className="app">
+    <div>
 
-      <div className="header">
-        <div className="logo">LIFTLOG PRO</div>
-        <div className="title">Workout Tracker</div>
-        <div className="subtitle">Dynamic • Fast • Clean</div>
+      <div style={{
+        background: color,
+        padding: "22px",
+        fontWeight: "bold",
+        fontSize: "26px"
+      }}>
+        Dynamic Workout Tracker
       </div>
 
-      <div className="stats">
-
-        <div className="stat-card">
-          <div className="stat-value">{workout.length}</div>
-          <div className="stat-label">EXERCISES</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-value">{completedSets}/{totalSets}</div>
-          <div className="stat-label">SETS</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-value">{volume}</div>
-          <div className="stat-label">VOLUME</div>
-        </div>
-
+      <div style={{
+        display: "flex",
+        gap: "8px",
+        overflowX: "auto",
+        padding: "14px"
+      }}>
+        {DAYS.map(day => (
+          <button
+            key={day}
+            onClick={() => setSelectedDay(day)}
+            style={{
+              background: selectedDay === day ? color : "#111",
+              color: "white",
+              border: "1px solid #222",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              cursor: "pointer",
+              minWidth: "90px"
+            }}
+          >
+            {day}
+          </button>
+        ))}
       </div>
 
-      <div className="section">
+      <div style={{ padding: "16px" }}>
 
-        <div className="section-title">TODAY WORKOUT</div>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          marginBottom: "18px"
+        }}>
+          <div style={{ fontSize: "34px" }}>
+            {workout.emoji}
+          </div>
 
-        {
-          workout.length === 0 && (
-            <div className="empty">
-              <div>No exercises added</div>
-              <div className="small">Tap the button below to create one</div>
+          <div>
+            <div style={{ fontSize: "20px", fontWeight: "bold" }}>
+              {workout.name}
             </div>
-          )
-        }
+
+            <div style={{ color: "#777", marginTop: "4px" }}>
+              {workout.exercises.length} exercises
+            </div>
+          </div>
+        </div>
 
         {
-          workout.map((exercise)=>(
-            <div className="exercise-card" key={exercise.id}>
-
-              <div className="exercise-top">
-
-                <input
-                  className="exercise-name"
-                  value={exercise.name}
-                  onChange={(e)=>updateExerciseName(exercise.id,e.target.value)}
-                />
-
-                <button
-                  className="icon-btn delete-btn"
-                  onClick={()=>deleteExercise(exercise.id)}
-                >
-                  🗑
-                </button>
-
+          workout.exercises.length === 0 ? (
+            <div style={{
+              background: "#111",
+              padding: "40px",
+              borderRadius: "14px",
+              textAlign: "center"
+            }}>
+              <div style={{ fontSize: "60px" }}>🛌</div>
+              <div style={{ marginTop: "10px", fontSize: "22px" }}>
+                Rest Day
               </div>
-
+            </div>
+          ) : (
+            <>
               {
-                exercise.sets.map((set,setIndex)=>(
-                  <div className="set-row" key={setIndex}>
+                workout.exercises.map((ex, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      background: "#111",
+                      border: "1px solid #1f1f1f",
+                      borderRadius: "14px",
+                      padding: "16px",
+                      marginBottom: "14px"
+                    }}
+                  >
 
-                    <div className="set-badge">
-                      {setIndex+1}
+                    <input
+                      value={ex.name}
+                      onChange={(e) => updateExerciseName(index, e.target.value)}
+                      style={{
+                        width: "100%",
+                        background: "#1a1a1a",
+                        border: "1px solid #333",
+                        padding: "12px",
+                        borderRadius: "10px",
+                        color: "white",
+                        fontSize: "16px",
+                        marginBottom: "10px"
+                      }}
+                    />
+
+                    <div style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "12px",
+                      flexWrap: "wrap",
+                      gap: "10px"
+                    }}>
+                      <div style={{ color: "#777" }}>
+                        {ex.sets} sets • {ex.target}
+                      </div>
+
+                      {
+                        ex.video && (
+                          <a
+                            href={ex.video}
+                            target="_blank"
+                            style={{
+                              background: "#222",
+                              color: "white",
+                              textDecoration: "none",
+                              padding: "8px 12px",
+                              borderRadius: "8px"
+                            }}
+                          >
+                            📹 Form
+                          </a>
+                        )
+                      }
                     </div>
 
-                    <input
-                      className="set-input"
-                      placeholder="Weight"
-                      value={set.weight}
-                      onChange={(e)=>updateSet(exercise.id,setIndex,'weight',e.target.value)}
-                    />
+                    <div style={{
+                      display: "flex",
+                      gap: "8px",
+                      marginBottom: "14px",
+                      flexWrap: "wrap"
+                    }}>
+                      <button
+                        onClick={() => addSet(index)}
+                        style={{
+                          background: "#00d084",
+                          border: "none",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          color: "white",
+                          cursor: "pointer"
+                        }}
+                      >
+                        + Set
+                      </button>
 
-                    <input
-                      className="set-input"
-                      placeholder="Reps"
-                      value={set.reps}
-                      onChange={(e)=>updateSet(exercise.id,setIndex,'reps',e.target.value)}
-                    />
+                      <button
+                        onClick={() => removeSet(index)}
+                        style={{
+                          background: "#ff8800",
+                          border: "none",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          color: "white",
+                          cursor: "pointer"
+                        }}
+                      >
+                        - Set
+                      </button>
 
-                    <button
-                      className={`check-btn ${set.done ? 'done' : ''}`}
-                      onClick={()=>toggleDone(exercise.id,setIndex)}
-                    >
-                      {set.done ? '✓' : '○'}
-                    </button>
+                      <button
+                        onClick={() => deleteExercise(index)}
+                        style={{
+                          background: "#ff4444",
+                          border: "none",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          color: "white",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Delete Exercise
+                      </button>
+                    </div>
 
-                    <div></div>
-                    <button
-                      style={{
-                        gridColumn:'2/4',
-                        background:'#191919',
-                        border:'1px solid #2a2a2a',
-                        color:'#777',
-                        borderRadius:'10px',
-                        padding:'10px',
-                        cursor:'pointer'
-                      }}
-                      onClick={()=>deleteSet(exercise.id,setIndex)}
-                    >
-                      Delete Set
-                    </button>
+                    {
+                      Array.from({ length: ex.sets }).map((_, setIndex) => (
+                        <div
+                          key={setIndex}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "60px 1fr 1fr",
+                            gap: "8px",
+                            marginBottom: "8px"
+                          }}
+                        >
+                          <div style={{
+                            background: color,
+                            borderRadius: "8px",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            fontWeight: "bold"
+                          }}>
+                            {setIndex + 1}
+                          </div>
 
+                          <input
+                            placeholder="Weight"
+                            style={{
+                              background: "#1a1a1a",
+                              border: "1px solid #333",
+                              padding: "12px",
+                              borderRadius: "8px",
+                              color: "white"
+                            }}
+                          />
+
+                          <input
+                            placeholder="Reps"
+                            style={{
+                              background: "#1a1a1a",
+                              border: "1px solid #333",
+                              padding: "12px",
+                              borderRadius: "8px",
+                              color: "white"
+                            }}
+                          />
+                        </div>
+                      ))
+                    }
                   </div>
                 ))
               }
 
               <button
-                className="add-set-btn"
-                onClick={()=>addSet(exercise.id)}
+                onClick={addExercise}
+                style={{
+                  width: "100%",
+                  padding: "16px",
+                  background: "#00d084",
+                  border: "none",
+                  borderRadius: "14px",
+                  color: "white",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  marginTop: "8px"
+                }}
               >
-                + ADD SET
+                + Add Exercise
               </button>
-
-            </div>
-          ))
+            </>
+          )
         }
-
       </div>
-
-      <div className="bottom-bar">
-        <button
-          className="add-exercise"
-          onClick={addExercise}
-        >
-          + ADD EXERCISE
-        </button>
-      </div>
-
     </div>
-  )
+  );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />)
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script></body>
 </html>
