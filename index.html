@@ -1,893 +1,626 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>Dynamic Workout Tracker</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>The Protocol — Workout Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}body{ background:#080808; color:#e8e8e8; font-family:Arial, sans-serif; -webkit-tap-highlight-color:transparent; }
-
-::-webkit-scrollbar{ display:none; }
-
-button,input{ font-family:inherit; } </style>
-
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080808;font-family:'DM Mono','Courier New',monospace;color:#e8e8e8;-webkit-tap-highlight-color:transparent}
+input,select,textarea{box-sizing:border-box;font-family:inherit}
+::-webkit-scrollbar{display:none}
+input::placeholder,textarea::placeholder{color:#333}
+a{color:inherit;text-decoration:none}
+</style>
 </head>
 <body>
-<div id="root"></div><script type="text/babel">
-const { useState, useEffect } = React;
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useCallback}=React;
 
-const DEFAULT_PLAN = {
-  Monday: {
-    name: "Push — Chest + Shoulders + Triceps",
-    emoji: "💪",
-    tag: "PUSH",
-    exercises: [
-      { name: "Dumbbell Bench Press", sets: 4, target: "8-12", type: "strength", video: "https://www.youtube.com/watch?v=VmB1G1K7v94" },
-      { name: "Incline Dumbbell Press", sets: 3, target: "10-12", type: "strength", video: "https://www.youtube.com/watch?v=8iPEnn-ltC8" },
-      { name: "Dumbbell Shoulder Press", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=qEwKCR5JCog" },
-      { name: "Dumbbell Lateral Raises", sets: 3, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=3VcKaXpzqRo" },
-      { name: "Overhead Tricep Extension", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=nRiJVZDpdL0" },
-      { name: "Push Ups", sets: 2, target: "Failure", type: "bodyweight", video: "https://www.youtube.com/watch?v=IODxDxX7oi4" },
-    ],
-  },
-
-  Tuesday: {
-    name: "Pull — Back + Biceps",
-    emoji: "🏋️",
-    tag: "PULL",
-    exercises: [
-      { name: "Dumbbell Bent Over Row", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=roCP6wCXPqo" },
-      { name: "Single Arm Dumbbell Row", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=pYcpY20QaE8" },
-      { name: "Band Lat Pulldown", sets: 4, target: "12-15", type: "strength", video: "https://www.youtube.com/watch?v=CAwf7n6Luuc" },
-      { name: "Chest Supported DB Row", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=MgCOXiqULQM" },
-      { name: "Hammer Curls", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=zC3nLlEvin4" },
-      { name: "Band Face Pulls", sets: 3, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=rep-qVOkqgk" },
-    ],
-  },
-
-  Wednesday: {
-    name: "Legs",
-    emoji: "🦵",
-    tag: "LEGS",
-    exercises: [
-      { name: "Kettlebell Goblet Squat", sets: 4, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=MxsFDhcyFyE" },
-      { name: "Bulgarian Split Squat", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=2C-uNgKwPLE" },
-      { name: "Dumbbell Romanian Deadlift", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=JCXUYuzwNrM" },
-      { name: "Dumbbell Reverse Lunges", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=xrjMuqyR2yg" },
-      { name: "Standing Calf Raises", sets: 4, target: "20", type: "bodyweight", video: "https://www.youtube.com/watch?v=gwLzBJYoWlI" },
-      { name: "Plank", sets: 3, target: "45 sec", type: "timed", video: "https://www.youtube.com/watch?v=ASdvN_XEl_c" },
-    ],
-  },
-
-  Thursday: {
-    name: "Upper",
-    emoji: "🔥",
-    tag: "UPPER",
-    exercises: [
-      { name: "Incline Dumbbell Press", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=8iPEnn-ltC8" },
-      { name: "Chest Supported DB Row", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=MgCOXiqULQM" },
-      { name: "Arnold Press", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=6Z15_WdXmVw" },
-      { name: "Band Lat Pulldown", sets: 3, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=CAwf7n6Luuc" },
-      { name: "Close Grip Dumbbell Press", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=LfyQBUKR8SE" },
-      { name: "Dumbbell Bicep Curls", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=ykJmrZ5v0Oo" },
-    ],
-  },
-
-  Friday: {
-    name: "Lower",
-    emoji: "⚡",
-    tag: "LOWER",
-    exercises: [
-      { name: "Dumbbell Sumo Squat", sets: 4, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=_-MbgEeqmsc" },
-      { name: "Dumbbell Stiff Leg Deadlift", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=1uDiW5--rAE" },
-      { name: "Step Ups", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=dQqApCGd5Ss" },
-      { name: "Single Leg Romanian Deadlift", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=84P-r7XXudM" },
-      { name: "Seated Calf Raises", sets: 4, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=YMmgqO8Jo-k" },
-      { name: "Hollow Body Hold", sets: 3, target: "30 sec", type: "timed", video: "https://www.youtube.com/watch?v=LlDNef_Ztsc" },
-    ],
-  },
-
-  Saturday: {
-    name: "Cardio + Core",
-    emoji: "🏃",
-    tag: "CARDIO",
-    exercises: [
-      { name: "Incline Treadmill Walk", sets: 1, target: "30-45 mins", type: "cardio", video: "https://www.youtube.com/watch?v=vGvAFO_EwUQ" },
-      { name: "Jump Rope", sets: 10, target: "1 min", type: "cardio", video: "https://www.youtube.com/watch?v=1BZM6j1LALk" },
-      { name: "Mountain Climbers", sets: 3, target: "30 sec", type: "bodyweight", video: "https://www.youtube.com/watch?v=nmwgirgXLYM" },
-      { name: "Lying Leg Raises", sets: 3, target: "15", type: "bodyweight", video: "https://www.youtube.com/watch?v=JB2oyawG9KI" },
-      { name: "Russian Twists", sets: 3, target: "20", type: "bodyweight", video: "https://www.youtube.com/watch?v=wkD8rjkodUI" },
-      { name: "Dead Bug", sets: 3, target: "15", type: "bodyweight", video: "https://www.youtube.com/watch?v=g_BYB0R-4Ws" },
-    ],
-  },
-
-  Sunday: {
-    name: "Rest & Recover",
-    emoji: "🛌",
-    tag: "REST",
-    exercises: [],
-  },
+/* ── EXERCISE LIBRARY ── */
+const LIBRARY={
+  chest:[
+    {name:"Dumbbell Bench Press",    type:"strength",  video:"https://www.youtube.com/shorts/DEuVNH1ZVOE"},
+    {name:"Incline Dumbbell Press",  type:"strength",  video:"https://www.youtube.com/shorts/wXn35LjHaI8"},
+    {name:"Band Chest Flyes",        type:"strength",  video:"https://www.youtube.com/shorts/WlKnirSpdec"},
+    {name:"Dumbbell Pullover",       type:"strength",  video:"https://www.youtube.com/shorts/DEuVNH1ZVOE"},
+    {name:"Push Ups",                type:"bodyweight",video:"https://www.youtube.com/shorts/DEuVNH1ZVOE"},
+    {name:"Close Grip Push Ups",     type:"bodyweight",video:"https://www.youtube.com/shorts/DEuVNH1ZVOE"},
+  ],
+  back:[
+    {name:"Dumbbell Bent Over Row",  type:"strength",  video:"https://www.youtube.com/shorts/m6xvxF58BvU"},
+    {name:"Single Arm DB Row",       type:"strength",  video:"https://www.youtube.com/shorts/M9YKzWqLReU"},
+    {name:"Chest Supported DB Row",  type:"strength",  video:"https://www.youtube.com/shorts/m6xvxF58BvU"},
+    {name:"Band Seated Row",         type:"strength",  video:"https://www.youtube.com/shorts/nmY4MTSFln8"},
+    {name:"Dumbbell Deadlift",       type:"strength",  video:"https://www.youtube.com/shorts/EQ6n5JpFqzo"},
+    {name:"Band Lat Pulldown",       type:"strength",  video:"https://www.youtube.com/shorts/nmY4MTSFln8"},
+  ],
+  shoulders:[
+    {name:"Dumbbell Shoulder Press", type:"strength",  video:"https://www.youtube.com/shorts/1V3vpcaxRYQ"},
+    {name:"Arnold Press",            type:"strength",  video:"https://www.youtube.com/shorts/Um-LMPCN26I"},
+    {name:"Dumbbell Lateral Raises", type:"strength",  video:"https://www.youtube.com/shorts/m6xvxF58BvU"},
+    {name:"Dumbbell Front Raises",   type:"strength",  video:"https://www.youtube.com/shorts/m6xvxF58BvU"},
+    {name:"Band Face Pulls",         type:"strength",  video:"https://www.youtube.com/shorts/nmY4MTSFln8"},
+    {name:"Band Upright Row",        type:"strength",  video:"https://www.youtube.com/shorts/nmY4MTSFln8"},
+  ],
+  biceps:[
+    {name:"Dumbbell Bicep Curls",    type:"strength",  video:"https://www.youtube.com/shorts/6JKqBKuGaPc"},
+    {name:"Hammer Curls",            type:"strength",  video:"https://www.youtube.com/shorts/6JKqBKuGaPc"},
+    {name:"Concentration Curls",     type:"strength",  video:"https://www.youtube.com/shorts/6JKqBKuGaPc"},
+    {name:"Incline Dumbbell Curls",  type:"strength",  video:"https://www.youtube.com/shorts/6JKqBKuGaPc"},
+    {name:"Band Bicep Curls",        type:"strength",  video:"https://www.youtube.com/shorts/6JKqBKuGaPc"},
+    {name:"Cross Body Hammer Curls", type:"strength",  video:"https://www.youtube.com/shorts/6JKqBKuGaPc"},
+  ],
+  triceps:[
+    {name:"Overhead Tricep Extension",type:"strength", video:"https://www.youtube.com/shorts/b_r_LW4HEcM"},
+    {name:"Tricep Kickbacks",         type:"strength", video:"https://www.youtube.com/shorts/b_r_LW4HEcM"},
+    {name:"Tricep Pushdowns (Band)",  type:"strength", video:"https://www.youtube.com/shorts/AYqg9S5FrUU"},
+    {name:"Diamond Push Ups",         type:"bodyweight",video:"https://www.youtube.com/shorts/AYqg9S5FrUU"},
+    {name:"Close Grip DB Press",      type:"strength", video:"https://www.youtube.com/shorts/b_r_LW4HEcM"},
+    {name:"Skull Crushers (DB)",      type:"strength", video:"https://www.youtube.com/shorts/b_r_LW4HEcM"},
+  ],
+  quads:[
+    {name:"Kettlebell Goblet Squat",  type:"strength", video:"https://www.youtube.com/shorts/0OWbS1WiUGU"},
+    {name:"Dumbbell Sumo Squat",      type:"strength", video:"https://www.youtube.com/shorts/7Ox3XID6ZJg"},
+    {name:"Dumbbell Lunges",          type:"strength", video:"https://www.youtube.com/shorts/qRDrhRgkjsg"},
+    {name:"Dumbbell Reverse Lunges",  type:"strength", video:"https://www.youtube.com/shorts/qRDrhRgkjsg"},
+    {name:"Bulgarian Split Squat",    type:"strength", video:"https://www.youtube.com/shorts/0OWbS1WiUGU"},
+    {name:"Step Ups (DB)",            type:"strength", video:"https://www.youtube.com/shorts/0OWbS1WiUGU"},
+  ],
+  hamstrings:[
+    {name:"Dumbbell Romanian Deadlift",type:"strength",video:"https://www.youtube.com/shorts/wqMYwk_-P14"},
+    {name:"Dumbbell Stiff Leg Deadlift",type:"strength",video:"https://www.youtube.com/shorts/wqMYwk_-P14"},
+    {name:"Kettlebell Swings",          type:"strength",video:"https://www.youtube.com/shorts/A0WAFT94dGY"},
+    {name:"Band Glute Kickbacks",       type:"bodyweight",video:"https://www.youtube.com/shorts/nmY4MTSFln8"},
+    {name:"Band Seated Abduction",      type:"bodyweight",video:"https://www.youtube.com/shorts/nmY4MTSFln8"},
+    {name:"Single Leg RDL",             type:"strength",video:"https://www.youtube.com/shorts/wqMYwk_-P14"},
+  ],
+  core:[
+    {name:"Plank",             type:"timed",     video:"https://www.youtube.com/shorts/0OlxJ3hQji8"},
+    {name:"Lying Leg Raises",  type:"bodyweight",video:"https://www.youtube.com/shorts/KUsvxlmpPoI"},
+    {name:"Russian Twists",    type:"bodyweight",video:"https://www.youtube.com/shorts/WCf9o1c7mv0"},
+    {name:"Dead Bug",          type:"bodyweight",video:"https://www.youtube.com/shorts/KUsvxlmpPoI"},
+    {name:"Mountain Climbers", type:"bodyweight",video:"https://www.youtube.com/shorts/KUsvxlmpPoI"},
+    {name:"Hollow Body Hold",  type:"timed",     video:"https://www.youtube.com/shorts/0OlxJ3hQji8"},
+  ],
+  calves:[
+    {name:"Standing Calf Raises",       type:"bodyweight",video:"https://www.youtube.com/shorts/7-80HiXX1K8"},
+    {name:"Single Leg Calf Raises",     type:"bodyweight",video:"https://www.youtube.com/shorts/7-80HiXX1K8"},
+    {name:"Seated Calf Raises (DB)",    type:"strength",  video:"https://www.youtube.com/shorts/7-80HiXX1K8"},
+    {name:"Tiptoe Walking",             type:"bodyweight",video:"https://www.youtube.com/shorts/7-80HiXX1K8"},
+    {name:"Jump Rope",                  type:"cardio",    video:"https://www.youtube.com/shorts/7-80HiXX1K8"},
+    {name:"Incline Treadmill Walk",     type:"cardio",    video:"https://www.youtube.com/shorts/PcWKiJ_f_Po"},
+  ],
+  cardio:[
+    {name:"Incline Treadmill Walk",type:"cardio",video:"https://www.youtube.com/shorts/PcWKiJ_f_Po"},
+    {name:"Cycling (Steady Pace)", type:"cardio",video:"https://www.youtube.com/shorts/tR4cfEutWuM"},
+    {name:"Kettlebell Swings",     type:"strength",video:"https://www.youtube.com/shorts/A0WAFT94dGY"},
+  ],
 };
 
-const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-
-const COLORS = {
-  PUSH: "#ff6b00",
-  PULL: "#7c3aed",
-  LEGS: "#059669",
-  UPPER: "#dc2626",
-  LOWER: "#0284c7",
-  CARDIO: "#d97706",
-  REST: "#374151",
+/* ── DEFAULT PLAN — 5-6 exercises/day, all muscles hit weekly ── */
+const DEFAULT_PLAN={
+  Monday:{name:"Push — Chest + Shoulders + Triceps",emoji:"💪",tag:"PUSH",exercises:[
+    {name:"Dumbbell Bench Press",      sets:4,target:"10-12",  type:"strength",  video:"https://www.youtube.com/shorts/DEuVNH1ZVOE"},
+    {name:"Incline Dumbbell Press",    sets:3,target:"10-12",  type:"strength",  video:"https://www.youtube.com/shorts/wXn35LjHaI8"},
+    {name:"Dumbbell Shoulder Press",   sets:3,target:"10-12",  type:"strength",  video:"https://www.youtube.com/shorts/1V3vpcaxRYQ"},
+    {name:"Dumbbell Lateral Raises",   sets:3,target:"12-15",  type:"strength",  video:"https://www.youtube.com/shorts/m6xvxF58BvU"},
+    {name:"Overhead Tricep Extension", sets:3,target:"12",     type:"strength",  video:"https://www.youtube.com/shorts/b_r_LW4HEcM"},
+    {name:"Tricep Pushdowns (Band)",   sets:3,target:"15",     type:"strength",  video:"https://www.youtube.com/shorts/AYqg9S5FrUU"},
+  ]},
+  Tuesday:{name:"Pull — Back + Biceps",emoji:"🏋️",tag:"PULL",exercises:[
+    {name:"Dumbbell Bent Over Row",    sets:4,target:"10-12",  type:"strength",  video:"https://www.youtube.com/shorts/m6xvxF58BvU"},
+    {name:"Single Arm DB Row",         sets:3,target:"10 each",type:"strength",  video:"https://www.youtube.com/shorts/M9YKzWqLReU"},
+    {name:"Band Face Pulls",           sets:3,target:"15-20",  type:"strength",  video:"https://www.youtube.com/shorts/nmY4MTSFln8"},
+    {name:"Dumbbell Bicep Curls",      sets:3,target:"12",     type:"strength",  video:"https://www.youtube.com/shorts/6JKqBKuGaPc"},
+    {name:"Hammer Curls",              sets:3,target:"12",     type:"strength",  video:"https://www.youtube.com/shorts/6JKqBKuGaPc"},
+  ]},
+  Wednesday:{name:"Legs — Quads + Hamstrings + Glutes + Calves",emoji:"🦵",tag:"LEGS",exercises:[
+    {name:"Kettlebell Goblet Squat",   sets:4,target:"12-15",  type:"strength",  video:"https://www.youtube.com/shorts/0OWbS1WiUGU"},
+    {name:"Dumbbell Romanian Deadlift",sets:4,target:"10-12",  type:"strength",  video:"https://www.youtube.com/shorts/wqMYwk_-P14"},
+    {name:"Dumbbell Reverse Lunges",   sets:3,target:"10 each",type:"strength",  video:"https://www.youtube.com/shorts/qRDrhRgkjsg"},
+    {name:"Band Glute Kickbacks",      sets:3,target:"15 each",type:"bodyweight",video:"https://www.youtube.com/shorts/nmY4MTSFln8"},
+    {name:"Standing Calf Raises",      sets:4,target:"20-25",  type:"bodyweight",video:"https://www.youtube.com/shorts/7-80HiXX1K8"},
+  ]},
+  Thursday:{name:"Upper — Chest + Back + Shoulders + Arms",emoji:"🔥",tag:"UPPER",exercises:[
+    {name:"Incline Dumbbell Press",    sets:3,target:"12-15",  type:"strength",  video:"https://www.youtube.com/shorts/wXn35LjHaI8"},
+    {name:"Chest Supported DB Row",    sets:3,target:"12",     type:"strength",  video:"https://www.youtube.com/shorts/m6xvxF58BvU"},
+    {name:"Arnold Press",              sets:3,target:"12",     type:"strength",  video:"https://www.youtube.com/shorts/Um-LMPCN26I"},
+    {name:"Band Lat Pulldown",         sets:3,target:"15",     type:"strength",  video:"https://www.youtube.com/shorts/nmY4MTSFln8"},
+    {name:"Concentration Curls",       sets:3,target:"12",     type:"strength",  video:"https://www.youtube.com/shorts/6JKqBKuGaPc"},
+    {name:"Skull Crushers (DB)",       sets:3,target:"12",     type:"strength",  video:"https://www.youtube.com/shorts/b_r_LW4HEcM"},
+  ]},
+  Friday:{name:"Lower — Quads + Hamstrings + Core",emoji:"⚡",tag:"LOWER",exercises:[
+    {name:"Bulgarian Split Squat",     sets:3,target:"10 each",type:"strength",  video:"https://www.youtube.com/shorts/0OWbS1WiUGU"},
+    {name:"Dumbbell Stiff Leg Deadlift",sets:3,target:"12",   type:"strength",  video:"https://www.youtube.com/shorts/wqMYwk_-P14"},
+    {name:"Kettlebell Swings",         sets:3,target:"15",     type:"strength",  video:"https://www.youtube.com/shorts/A0WAFT94dGY"},
+    {name:"Plank",                     sets:3,target:"45 sec", type:"timed",     video:"https://www.youtube.com/shorts/0OlxJ3hQji8"},
+    {name:"Lying Leg Raises",          sets:3,target:"15",     type:"bodyweight",video:"https://www.youtube.com/shorts/KUsvxlmpPoI"},
+    {name:"Russian Twists",            sets:3,target:"20",     type:"bodyweight",video:"https://www.youtube.com/shorts/WCf9o1c7mv0"},
+  ]},
+  Saturday:{name:"Cardio + Core",emoji:"🏃",tag:"CARDIO",exercises:[
+    {name:"Incline Treadmill Walk",    sets:1,target:"25 mins",type:"cardio",    video:"https://www.youtube.com/shorts/PcWKiJ_f_Po"},
+    {name:"Cycling (Steady Pace)",     sets:1,target:"15 mins",type:"cardio",    video:"https://www.youtube.com/shorts/tR4cfEutWuM"},
+    {name:"Kettlebell Swings",         sets:3,target:"15",     type:"strength",  video:"https://www.youtube.com/shorts/A0WAFT94dGY"},
+    {name:"Mountain Climbers",         sets:3,target:"20",     type:"bodyweight",video:"https://www.youtube.com/shorts/KUsvxlmpPoI"},
+    {name:"Russian Twists",            sets:3,target:"20",     type:"bodyweight",video:"https://www.youtube.com/shorts/WCf9o1c7mv0"},
+  ]},
+  Sunday:{name:"Rest & Recover",emoji:"🛌",tag:"REST",exercises:[]},
 };
+
+const DAYS=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const TAG_COLORS={PUSH:"#ff6b00",PULL:"#7c3aed",LEGS:"#059669",UPPER:"#dc2626",LOWER:"#0284c7",CARDIO:"#d97706",REST:"#374151"};
+const TYPE_CFG={
+  strength:  {col1:"Weight (kg)",col2:"Reps done",    badge:"WEIGHT",bc:"#ff6b00"},
+  cardio:    {col1:"Duration",   col2:"Speed/Incline",badge:"CARDIO",bc:"#d97706"},
+  timed:     {col1:"Secs held",  col2:"Notes",        badge:"TIMED", bc:"#7c3aed"},
+  bodyweight:{col1:"Reps done",  col2:"Notes",        badge:"BW",    bc:"#059669"},
+};
+const LIBRARY_LABELS={chest:"Chest",back:"Back",shoulders:"Shoulders",biceps:"Biceps",triceps:"Triceps",quads:"Quads",hamstrings:"Hamstrings & Glutes",core:"Core",calves:"Calves",cardio:"Cardio"};
+
+const getTodayName=()=>{const d=new Date().getDay();return DAYS[d===0?6:d-1];};
+const getDateStr=()=>new Date().toISOString().split("T")[0];
+const load=(k,fb)=>{try{const v=JSON.parse(localStorage.getItem(k));return v!==null?v:fb;}catch{return fb;}};
+const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 
 function App(){
-  const [selectedDay, setSelectedDay] = useState("Monday");
+  const [selectedDay,setSelectedDay]=useState(getTodayName());
+  const [activeTab,setActiveTab]=useState("today");
+  const [logs,setLogs]=useState(()=>load("p_logs",{}));
+  const [plan,setPlan]=useState(()=>load("p_plan",DEFAULT_PLAN));
+  const [inputVals,setInputVals]=useState({});
+  const [doneSets,setDoneSets]=useState({});
+  const [toast,setToast]=useState(null);
+  // Edit exercise modal
+  const [editModal,setEditModal]=useState(null); // {day,idx} or null
+  const [editName,setEditName]=useState("");
+  const [editTarget,setEditTarget]=useState("");
+  const [editSets,setEditSets]=useState("");
+  const [editVideo,setEditVideo]=useState("");
+  // Library picker modal
+  const [libraryModal,setLibraryModal]=useState(null); // {day,idx} or null
+  const [libraryTab,setLibraryTab]=useState("chest");
 
-  const [plan, setPlan] = useState(() => {
-    const saved = localStorage.getItem("dynamic_plan");
-    return saved ? JSON.parse(saved) : DEFAULT_PLAN;
-  });
+  const today=getTodayName();
 
-  useEffect(() => {
-    localStorage.setItem("dynamic_plan", JSON.stringify(plan));
-  }, [plan]);
+  const showToast=(msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),2500);};
 
-  const workout = plan[selectedDay];
-  const color = COLORS[workout.tag];
+  const updateLogs=nl=>{setLogs(nl);save("p_logs",nl);};
+  const updatePlan=np=>{setPlan(np);save("p_plan",np);};
 
-  const updateExerciseName = (index, value) => {
-    const updated = {...plan};
-    updated[selectedDay].exercises[index].name = value;
-    setPlan(updated);
+  const logSet=(exName,si,v1,v2)=>{
+    const key=`${getDateStr()}__${selectedDay}`;
+    const u={...logs};
+    if(!u[key])u[key]={};
+    if(!u[key][exName])u[key][exName]=[];
+    u[key][exName][si]={v1,v2,done:true};
+    updateLogs(u);
+    setDoneSets(p=>({...p,[`${exName}_${si}`]:true}));
+    showToast(`Set ${si+1} logged ✓`);
   };
 
-  const addExercise = () => {
-    const updated = {...plan};
+  const getSetLog=(exName,si)=>logs[`${getDateStr()}__${selectedDay}`]?.[exName]?.[si]||null;
 
-    updated[selectedDay].exercises.push({
-      name: "New Exercise",
-      sets: 3,
-      target: "10-12",
-      type: "strength",
-      video: ""
+  const getDayPct=day=>{
+    const p=plan[day];if(!p.exercises.length)return -1;
+    let total=0,done=0;
+    const key=`${getDateStr()}__${day}`;
+    p.exercises.forEach(ex=>{for(let i=0;i<ex.sets;i++){total++;if(logs[key]?.[ex.name]?.[i]?.done)done++;}});
+    return total?Math.round((done/total)*100):0;
+  };
+
+  const globalStats=()=>{
+    let sets=0,days=new Set(),vol=0;
+    Object.entries(logs).forEach(([key,dl])=>{
+      days.add(key);
+      Object.values(dl).forEach(s=>s.forEach(x=>{if(x?.done){sets++;const w=parseFloat(x.v1||0),r=parseInt(x.v2||0);if(!isNaN(w)&&!isNaN(r))vol+=w*r;}}));
     });
-
-    setPlan(updated);
+    return{sets,days:days.size,vol:Math.round(vol)};
   };
 
-  const deleteExercise = (index) => {
-    const updated = {...plan};
-    updated[selectedDay].exercises.splice(index, 1);
-    setPlan(updated);
+  // Open edit modal
+  const openEdit=(day,idx)=>{
+    const ex=plan[day].exercises[idx];
+    setEditName(ex.name);setEditTarget(ex.target);setEditSets(String(ex.sets));setEditVideo(ex.video||"");
+    setEditModal({day,idx});
   };
 
-  const addSet = (index) => {
-    const updated = {...plan};
-    updated[selectedDay].exercises[index].sets += 1;
-    setPlan(updated);
+  // Save edit
+  const saveEdit=()=>{
+    if(!editModal)return;
+    const np=JSON.parse(JSON.stringify(plan));
+    np[editModal.day].exercises[editModal.idx]={
+      ...np[editModal.day].exercises[editModal.idx],
+      name:editName.trim()||np[editModal.day].exercises[editModal.idx].name,
+      target:editTarget.trim(),
+      sets:Math.max(1,parseInt(editSets)||1),
+      video:editVideo.trim()||np[editModal.day].exercises[editModal.idx].video,
+    };
+    updatePlan(np);setEditModal(null);showToast("Exercise updated ✓");
   };
 
-  const removeSet = (index) => {
-    const updated = {...plan};
-
-    if(updated[selectedDay].exercises[index].sets > 1){
-      updated[selectedDay].exercises[index].sets -= 1;
-    }
-
-    setPlan(updated);
+  // Delete exercise
+  const deleteExercise=(day,idx)=>{
+    const np=JSON.parse(JSON.stringify(plan));
+    np[day].exercises.splice(idx,1);
+    updatePlan(np);setEditModal(null);showToast("Exercise removed");
   };
 
-  return (
-    <div>
+  // Pick from library
+  const pickFromLibrary=(libEx)=>{
+    if(!libraryModal)return;
+    const np=JSON.parse(JSON.stringify(plan));
+    np[libraryModal.day].exercises[libraryModal.idx]={
+      ...np[libraryModal.day].exercises[libraryModal.idx],
+      name:libEx.name,type:libEx.type,video:libEx.video,
+    };
+    updatePlan(np);setLibraryModal(null);showToast(`Swapped to ${libEx.name} ✓`);
+  };
 
-      <div style={{
-        background: color,
-        padding: "22px",
-        fontWeight: "bold",
-        fontSize: "26px"
-      }}>
-        Dynamic Workout Tracker
-      </div>
+  // Add exercise to day
+  const addExercise=(day)=>{
+    const np=JSON.parse(JSON.stringify(plan));
+    np[day].exercises.push({name:"New Exercise",sets:3,target:"10-12",type:"strength",video:""});
+    updatePlan(np);showToast("Exercise added — tap ✏️ to edit");
+  };
 
-      <div style={{
-        display: "flex",
-        gap: "8px",
-        overflowX: "auto",
-        padding: "14px"
-      }}>
-        {DAYS.map(day => (
-          <button
-            key={day}
-            onClick={() => setSelectedDay(day)}
-            style={{
-              background: selectedDay === day ? color : "#111",
-              color: "white",
-              border: "1px solid #222",
-              padding: "10px 14px",
-              borderRadius: "10px",
-              cursor: "pointer",
-              minWidth: "90px"
-            }}
-          >
-            {day}
-          </button>
-        ))}
-      </div>
+  const exportAll=()=>{
+    const blob=new Blob([JSON.stringify({logs,plan},null,2)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="protocol_backup.json";a.click();
+    showToast("Exported ✓");
+  };
+  const importAll=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.logs)updateLogs({...logs,...d.logs});if(d.plan)updatePlan(d.plan);showToast("Imported ✓");}catch{showToast("Failed","err");}};
+    r.readAsText(f);
+  };
 
-      <div style={{ padding: "16px" }}>
+  const stats=globalStats();
+  const workout=plan[selectedDay]||DEFAULT_PLAN[selectedDay];
+  const tc=TAG_COLORS[workout.tag]||"#ff6b00";
+  const INP={flex:1,background:"#080808",border:"1px solid #222",borderRadius:6,padding:"8px 9px",color:"#e8e8e8",fontSize:12,fontFamily:"inherit",outline:"none",minWidth:0};
+  const MINP={width:"100%",background:"#0f0f0f",border:"1px solid #222",borderRadius:8,padding:"10px 12px",color:"#e8e8e8",fontSize:13,fontFamily:"inherit",outline:"none",marginBottom:10};
 
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          marginBottom: "18px"
-        }}>
-          <div style={{ fontSize: "34px" }}>
-            {workout.emoji}
-          </div>
+  return(
+    <div style={{minHeight:"100vh",background:"#080808"}}>
 
-          <div>
-            <div style={{ fontSize: "20px", fontWeight: "bold" }}>
-              {workout.name}
+      {/* Toast */}
+      {toast&&<div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:toast.type==="err"?"#ff4444":"#00d084",color:"#fff",padding:"10px 20px",borderRadius:8,fontSize:12,zIndex:9999,fontFamily:"inherit",boxShadow:"0 4px 20px rgba(0,0,0,0.6)",whiteSpace:"nowrap"}}>{toast.msg}</div>}
+
+      {/* ── EDIT EXERCISE MODAL ── */}
+      {editModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"flex-end"}}>
+          <div style={{width:"100%",background:"#0f0f0f",borderRadius:"16px 16px 0 0",padding:20,maxHeight:"90vh",overflowY:"auto"}}>
+            <div style={{fontSize:12,letterSpacing:2,color:"#444",marginBottom:16}}>EDIT EXERCISE</div>
+
+            <div style={{fontSize:10,color:"#555",marginBottom:4,letterSpacing:1}}>EXERCISE NAME</div>
+            <input style={MINP} value={editName} onChange={e=>setEditName(e.target.value)} placeholder="Exercise name"/>
+
+            <div style={{fontSize:10,color:"#555",marginBottom:4,letterSpacing:1}}>TARGET REPS / DURATION</div>
+            <input style={MINP} value={editTarget} onChange={e=>setEditTarget(e.target.value)} placeholder="e.g. 10-12 or 45 sec"/>
+
+            <div style={{fontSize:10,color:"#555",marginBottom:4,letterSpacing:1}}>NUMBER OF SETS</div>
+            <div style={{display:"flex",gap:8,marginBottom:10}}>
+              {[1,2,3,4,5].map(n=>(
+                <button key={n} onClick={()=>setEditSets(String(n))} style={{flex:1,padding:"10px 0",borderRadius:8,border:editSets===String(n)?`1.5px solid ${tc}`:"1px solid #222",background:editSets===String(n)?`${tc}20`:"#141414",color:editSets===String(n)?tc:"#555",cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"inherit"}}>{n}</button>
+              ))}
             </div>
 
-            <div style={{ color: "#777", marginTop: "4px" }}>
-              {workout.exercises.length} exercises
+            <div style={{fontSize:10,color:"#555",marginBottom:4,letterSpacing:1}}>YOUTUBE SHORTS LINK (optional)</div>
+            <input style={MINP} value={editVideo} onChange={e=>setEditVideo(e.target.value)} placeholder="https://youtube.com/shorts/..."/>
+
+            {/* Swap from library */}
+            <button onClick={()=>{setLibraryModal(editModal);setEditModal(null);}} style={{width:"100%",padding:12,borderRadius:10,background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#888",fontSize:12,fontWeight:600,letterSpacing:1,cursor:"pointer",fontFamily:"inherit",marginBottom:10}}>
+              📚 SWAP FROM EXERCISE LIBRARY
+            </button>
+
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={saveEdit} style={{flex:2,padding:13,borderRadius:10,background:tc,border:"none",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>SAVE CHANGES</button>
+              <button onClick={()=>setEditModal(null)} style={{flex:1,padding:13,borderRadius:10,background:"#1a1a1a",border:"1px solid #222",color:"#666",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>CANCEL</button>
+            </div>
+            <button onClick={()=>deleteExercise(editModal.day,editModal.idx)} style={{width:"100%",marginTop:8,padding:12,borderRadius:10,background:"none",border:"1px solid #ff444440",color:"#ff4444",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",letterSpacing:1}}>
+              🗑 DELETE THIS EXERCISE
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── LIBRARY MODAL ── */}
+      {libraryModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.9)",zIndex:1000,display:"flex",alignItems:"flex-end"}}>
+          <div style={{width:"100%",background:"#0f0f0f",borderRadius:"16px 16px 0 0",padding:20,maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <div style={{fontSize:12,letterSpacing:2,color:"#444"}}>EXERCISE LIBRARY</div>
+              <button onClick={()=>setLibraryModal(null)} style={{background:"none",border:"none",color:"#555",fontSize:18,cursor:"pointer"}}>✕</button>
+            </div>
+
+            {/* Library category tabs */}
+            <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:10,marginBottom:12,flexShrink:0}}>
+              {Object.keys(LIBRARY_LABELS).map(cat=>(
+                <button key={cat} onClick={()=>setLibraryTab(cat)} style={{flexShrink:0,padding:"6px 12px",borderRadius:20,border:libraryTab===cat?`1.5px solid ${tc}`:"1px solid #222",background:libraryTab===cat?`${tc}18`:"#141414",color:libraryTab===cat?tc:"#555",fontSize:10,cursor:"pointer",fontFamily:"inherit",letterSpacing:1,whiteSpace:"nowrap"}}>
+                  {LIBRARY_LABELS[cat].toUpperCase()}
+                </button>
+              ))}
+            </div>
+
+            {/* Exercise list */}
+            <div style={{overflowY:"auto",flex:1}}>
+              {(LIBRARY[libraryTab]||[]).map((ex,i)=>(
+                <div key={i} onClick={()=>pickFromLibrary(ex)} style={{background:"#141414",borderRadius:10,border:"1px solid #1e1e1e",padding:"12px 14px",marginBottom:8,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:600}}>{ex.name}</div>
+                    <span style={{fontSize:9,padding:"2px 6px",borderRadius:4,background:`${TYPE_CFG[ex.type]?.bc||"#555"}20`,color:TYPE_CFG[ex.type]?.bc||"#555",marginTop:4,display:"inline-block",letterSpacing:1}}>{TYPE_CFG[ex.type]?.badge||ex.type}</span>
+                  </div>
+                  <span style={{color:tc,fontSize:18}}>→</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
+      )}
 
-        {
-          workout.exercises.length === 0 ? (
-            <div style={{
-              background: "#111",
-              padding: "40px",
-              borderRadius: "14px",
-              textAlign: "center"
-            }}>
-              <div style={{ fontSize: "60px" }}>🛌</div>
-              <div style={{ marginTop: "10px", fontSize: "22px" }}>
-                Rest Day
-              </div>
-            </div>
-          ) : (
-            <>
-              {
-                workout.exercises.map((ex, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      background: "#111",
-                      border: "1px solid #1f1f1f",
-                      borderRadius: "14px",
-                      padding: "16px",
-                      marginBottom: "14px"
-                    }}
-                  >
-
-                    <input
-                      value={ex.name}
-                      onChange={(e) => updateExerciseName(index, e.target.value)}
-                      style={{
-                        width: "100%",
-                        background: "#1a1a1a",
-                        border: "1px solid #333",
-                        padding: "12px",
-                        borderRadius: "10px",
-                        color: "white",
-                        fontSize: "16px",
-                        marginBottom: "10px"
-                      }}
-                    />
-
-                    <div style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "12px",
-                      flexWrap: "wrap",
-                      gap: "10px"
-                    }}>
-                      <div style={{ color: "#777" }}>
-                        {ex.sets} sets • {ex.target}
-                      </div>
-
-                      {
-                        ex.video && (
-                          <a
-                            href={ex.video}
-                            target="_blank"
-                            style={{
-                              background: "#222",
-                              color: "white",
-                              textDecoration: "none",
-                              padding: "8px 12px",
-                              borderRadius: "8px"
-                            }}
-                          >
-                            📹 Form
-                          </a>
-                        )
-                      }
-                    </div>
-
-                    <div style={{
-                      display: "flex",
-                      gap: "8px",
-                      marginBottom: "14px",
-                      flexWrap: "wrap"
-                    }}>
-                      <button
-                        onClick={() => addSet(index)}
-                        style={{
-                          background: "#00d084",
-                          border: "none",
-                          padding: "10px 12px",
-                          borderRadius: "8px",
-                          color: "white",
-                          cursor: "pointer"
-                        }}
-                      >
-                        + Set
-                      </button>
-
-                      <button
-                        onClick={() => removeSet(index)}
-                        style={{
-                          background: "#ff8800",
-                          border: "none",
-                          padding: "10px 12px",
-                          borderRadius: "8px",
-                          color: "white",
-                          cursor: "pointer"
-                        }}
-                      >
-                        - Set
-                      </button>
-
-                      <button
-                        onClick={() => deleteExercise(index)}
-                        style={{
-                          background: "#ff4444",
-                          border: "none",
-                          padding: "10px 12px",
-                          borderRadius: "8px",
-                          color: "white",
-                          cursor: "pointer"
-                        }}
-                      >
-                        Delete Exercise
-                      </button>
-                    </div>
-
-                    {
-                      Array.from({ length: ex.sets }).map((_, setIndex) => (
-                        <div
-                          key={setIndex}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "60px 1fr 1fr",
-                            gap: "8px",
-                            marginBottom: "8px"
-                          }}
-                        >
-                          <div style={{
-                            background: color,
-                            borderRadius: "8px",
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            fontWeight: "bold"
-                          }}>
-                            {setIndex + 1}
-                          </div>
-
-                          <input
-                            placeholder="Weight"
-                            style={{
-                              background: "#1a1a1a",
-                              border: "1px solid #333",
-                              padding: "12px",
-                              borderRadius: "8px",
-                              color: "white"
-                            }}
-                          />
-
-                          <input
-                            placeholder="Reps"
-                            style={{
-                              background: "#1a1a1a",
-                              border: "1px solid #333",
-                              padding: "12px",
-                              borderRadius: "8px",
-                              color: "white"
-                            }}
-                          />
-                        </div>
-                      ))
-                    }
-                  </div>
-                ))
-              }
-
-              <button
-                onClick={addExercise}
-                style={{
-                  width: "100%",
-                  padding: "16px",
-                  background: "#00d084",
-                  border: "none",
-                  borderRadius: "14px",
-                  color: "white",
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                  marginTop: "8px"
-                }}
-              >
-                + Add Exercise
-              </button>
-            </>
-          )
-        }
+      {/* Header */}
+      <div style={{background:`linear-gradient(135deg,${tc},${tc}aa)`,padding:"22px 18px 18px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-30,right:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.07)"}}/>
+        <div style={{position:"relative",zIndex:1}}>
+          <div style={{fontSize:10,letterSpacing:3,opacity:0.75}}>THE PROTOCOL</div>
+          <div style={{fontSize:22,fontWeight:700,marginTop:2}}>WORKOUT TRACKER</div>
+          <div style={{fontSize:10,color:"rgba(255,255,255,0.6)",marginTop:4}}>{new Date().toDateString()}</div>
+        </div>
       </div>
+
+      {/* Stats */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",background:"#0f0f0f",borderBottom:"1px solid #1e1e1e"}}>
+        {[["TOTAL DAYS",stats.days],["SETS DONE",stats.sets],["VOL (kg)",stats.vol.toLocaleString()]].map(([l,v])=>(
+          <div key={l} style={{padding:"12px 0",textAlign:"center"}}>
+            <div style={{fontSize:18,fontWeight:700,color:tc}}>{v}</div>
+            <div style={{fontSize:9,letterSpacing:2,color:"#444",marginTop:2}}>{l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div style={{display:"flex",background:"#0f0f0f",borderBottom:"1px solid #1a1a1a"}}>
+        {[["today","TODAY"],["week","WEEK"],["history","HISTORY"],["backup","BACKUP"]].map(([id,label])=>(
+          <button key={id} onClick={()=>setActiveTab(id)} style={{flex:1,padding:"12px 0",fontSize:10,letterSpacing:2,background:"none",border:"none",cursor:"pointer",color:activeTab===id?tc:"#444",borderBottom:activeTab===id?`2px solid ${tc}`:"2px solid transparent",fontFamily:"inherit",fontWeight:600}}>{label}</button>
+        ))}
+      </div>
+
+      {/* ── TODAY ── */}
+      {activeTab==="today"&&(
+        <div style={{padding:16}}>
+          {/* Day scroller */}
+          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:10,marginBottom:14}}>
+            {DAYS.map(day=>{
+              const pct=getDayPct(day),sel=selectedDay===day,dtc=TAG_COLORS[plan[day]?.tag]||"#ff6b00";
+              return(
+                <button key={day} onClick={()=>setSelectedDay(day)} style={{flexShrink:0,padding:"8px 11px",borderRadius:8,minWidth:50,border:sel?`1.5px solid ${dtc}`:"1.5px solid #1e1e1e",background:sel?`${dtc}18`:"#0f0f0f",cursor:"pointer",textAlign:"center"}}>
+                  <div style={{fontSize:9,letterSpacing:1,color:sel?dtc:"#444",fontFamily:"inherit"}}>{day.slice(0,3).toUpperCase()}</div>
+                  <div style={{fontSize:7,color:sel?dtc:"#2a2a2a",marginTop:1,letterSpacing:1}}>{plan[day]?.tag}</div>
+                  {day===today&&<div style={{fontSize:7,color:dtc,marginTop:1}}>●</div>}
+                  {pct>0&&<div style={{marginTop:4,height:2,borderRadius:1,background:"#1e1e1e"}}><div style={{height:"100%",width:pct+"%",background:pct===100?"#00d084":dtc,borderRadius:1}}/></div>}
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:26}}>{workout.emoji}</span>
+            <div>
+              <div style={{fontSize:14,fontWeight:700}}>{workout.name}</div>
+              {workout.exercises.length>0&&<div style={{fontSize:10,color:"#444",marginTop:3}}>Tap ✏️ to edit · ▶ to watch · ✓ to log</div>}
+            </div>
+          </div>
+
+          {workout.exercises.length===0?(
+            <div style={{textAlign:"center",padding:"48px 20px",background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a"}}>
+              <div style={{fontSize:48}}>🛌</div>
+              <div style={{fontSize:16,fontWeight:700,marginTop:12}}>Rest Day</div>
+              <div style={{fontSize:12,color:"#444",marginTop:6,lineHeight:1.6}}>Sleep 8hrs · Eat protein · Walk 8,000 steps</div>
+            </div>
+          ):(
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {workout.exercises.map((ex,idx)=>{
+                const cfg=TYPE_CFG[ex.type]||TYPE_CFG.strength;
+                return(
+                  <div key={idx} style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",overflow:"hidden"}}>
+                    {/* Exercise header */}
+                    <div style={{padding:"11px 14px",borderBottom:"1px solid #141414",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ex.name}</div>
+                        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4,flexWrap:"wrap"}}>
+                          <span style={{fontSize:10,color:"#555"}}>{ex.sets} sets · {ex.target}</span>
+                          <span style={{fontSize:9,padding:"2px 6px",borderRadius:4,background:`${cfg.bc}20`,color:cfg.bc,letterSpacing:1}}>{cfg.badge}</span>
+                        </div>
+                      </div>
+                      <div style={{display:"flex",gap:6,flexShrink:0}}>
+                        {/* Edit button */}
+                        <button onClick={()=>openEdit(selectedDay,idx)} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:8,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,cursor:"pointer"}}>✏️</button>
+                        {/* Video button */}
+                        {ex.video&&<a href={ex.video} target="_blank" rel="noopener noreferrer" style={{background:"#ff000018",border:"1px solid #ff000040",borderRadius:8,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>▶</a>}
+                      </div>
+                    </div>
+
+                    {/* Set rows */}
+                    <div style={{padding:"10px 14px",display:"flex",flexDirection:"column",gap:8}}>
+                      <div style={{display:"flex",gap:7,alignItems:"center",paddingLeft:29}}>
+                        <div style={{flex:1,fontSize:9,color:"#2a2a2a",letterSpacing:1}}>{cfg.col1.toUpperCase()}</div>
+                        <div style={{flex:1,fontSize:9,color:"#2a2a2a",letterSpacing:1}}>{cfg.col2.toUpperCase()}</div>
+                        <div style={{width:36,flexShrink:0}}/>
+                      </div>
+                      {Array.from({length:ex.sets}).map((_,si)=>{
+                        const logged=getSetLog(ex.name,si),ik=`${ex.name}_${si}`,done=logged?.done||doneSets[ik];
+                        return(
+                          <div key={si} style={{display:"flex",alignItems:"center",gap:7}}>
+                            <div style={{width:22,height:22,borderRadius:5,flexShrink:0,background:done?"#00d084":"#161616",display:"flex",alignItems:"center",justifyContent:"center",fontSize:done?12:9,color:done?"#fff":"#333",transition:"background 0.3s"}}>{done?"✓":si+1}</div>
+                            <input style={INP} placeholder={logged?.v1||cfg.col1} defaultValue={logged?.v1||""} onChange={e=>setInputVals(p=>({...p,[`${ik}_1`]:e.target.value}))}/>
+                            <input style={INP} placeholder={logged?.v2||cfg.col2} defaultValue={logged?.v2||""} onChange={e=>setInputVals(p=>({...p,[`${ik}_2`]:e.target.value}))}/>
+                            <button onClick={()=>logSet(ex.name,si,inputVals[`${ik}_1`]||logged?.v1||"-",inputVals[`${ik}_2`]||logged?.v2||ex.target)} style={{background:done?tc:"#161616",border:"none",borderRadius:6,padding:"8px 10px",color:done?"#fff":"#444",cursor:"pointer",fontSize:14,flexShrink:0,transition:"background 0.3s"}}>✓</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Add exercise button */}
+              {selectedDay!=="Sunday"&&(
+                <button onClick={()=>addExercise(selectedDay)} style={{padding:13,borderRadius:12,background:"none",border:`1.5px dashed ${tc}60`,color:tc,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",letterSpacing:1}}>
+                  + ADD EXERCISE
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── WEEK ── */}
+      {activeTab==="week"&&(
+        <div style={{padding:16}}>
+          <div style={{fontSize:10,letterSpacing:2,color:"#444",marginBottom:14}}>YOUR 6-DAY SPLIT</div>
+          {DAYS.map(day=>{
+            const pct=getDayPct(day),p=plan[day],isToday=day===today,dtc=TAG_COLORS[p?.tag]||"#ff6b00";
+            return(
+              <div key={day} onClick={()=>{setSelectedDay(day);setActiveTab("today");}} style={{background:"#0f0f0f",borderRadius:12,border:isToday?`1.5px solid ${dtc}`:"1px solid #1a1a1a",marginBottom:10,cursor:"pointer",padding:"13px 15px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div>
+                    <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                      <span style={{fontSize:16}}>{p?.emoji}</span>
+                      <span style={{fontSize:13,fontWeight:600}}>{day}</span>
+                      <span style={{fontSize:8,background:`${dtc}20`,color:dtc,padding:"2px 6px",borderRadius:4,letterSpacing:1}}>{p?.tag}</span>
+                      {isToday&&<span style={{fontSize:8,background:dtc,color:"#fff",padding:"2px 6px",borderRadius:4}}>TODAY</span>}
+                    </div>
+                    <div style={{fontSize:10,color:"#444",marginTop:3}}>{p?.name}</div>
+                    {p?.exercises.length>0&&<div style={{fontSize:9,color:"#333",marginTop:2}}>{p.exercises.length} exercises</div>}
+                  </div>
+                  <div style={{fontSize:18,fontWeight:700,color:pct===100?"#00d084":pct>0?dtc:"#282828"}}>{pct===100?"✓":pct>0?pct+"%":"–"}</div>
+                </div>
+                {pct>0&&pct<100&&<div style={{marginTop:8,height:2,borderRadius:1,background:"#1a1a1a"}}><div style={{height:"100%",width:pct+"%",background:dtc,borderRadius:1}}/></div>}
+              </div>
+            );
+          })}
+
+          <div style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",padding:14,marginTop:4}}>
+            <div style={{fontSize:10,letterSpacing:2,color:"#444",marginBottom:12}}>MUSCLE FREQUENCY</div>
+            {[
+              {m:"Chest",     days:["Mon","Thu"],c:"#ff6b00"},
+              {m:"Back",      days:["Tue","Thu"],c:"#7c3aed"},
+              {m:"Shoulders", days:["Mon","Thu"],c:"#ff6b00"},
+              {m:"Biceps",    days:["Tue","Thu"],c:"#7c3aed"},
+              {m:"Triceps",   days:["Mon","Thu"],c:"#ff6b00"},
+              {m:"Rear Delts",days:["Tue","Thu"],c:"#7c3aed"},
+              {m:"Quads",     days:["Wed","Fri"],c:"#059669"},
+              {m:"Hamstrings",days:["Wed","Fri"],c:"#059669"},
+              {m:"Glutes",    days:["Wed","Fri"],c:"#059669"},
+              {m:"Core",      days:["Fri","Sat"],c:"#0284c7"},
+              {m:"Calves",    days:["Wed"],      c:"#059669"},
+            ].map(r=>(
+              <div key={r.m} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
+                <div style={{fontSize:11,color:"#666",width:90,flexShrink:0}}>{r.m}</div>
+                <div style={{display:"flex",gap:4,flex:1}}>{r.days.map(d=><span key={d} style={{fontSize:9,background:`${r.c}20`,color:r.c,padding:"2px 7px",borderRadius:4,letterSpacing:1}}>{d}</span>)}</div>
+                <div style={{fontSize:11,fontWeight:700,color:r.days.length>1?"#00d084":"#555"}}>{r.days.length}×</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── HISTORY ── */}
+      {activeTab==="history"&&(
+        <div style={{padding:16}}>
+          <div style={{fontSize:10,letterSpacing:2,color:"#444",marginBottom:14}}>ALL SESSIONS · {Object.keys(logs).length} logged</div>
+          {Object.keys(logs).length===0?(
+            <div style={{textAlign:"center",padding:40,color:"#444"}}>
+              <div style={{fontSize:36,marginBottom:10}}>📋</div>
+              <div>No sessions yet.</div>
+              <div style={{fontSize:11,marginTop:6}}>Log your first workout and it appears here.</div>
+            </div>
+          ):(
+            Object.entries(logs).sort((a,b)=>b[0].localeCompare(a[0])).map(([key,dayLog])=>{
+              const[date,day]=key.split("__"),p=plan[day]||DEFAULT_PLAN[day];if(!p)return null;
+              const htc=TAG_COLORS[p.tag]||"#ff6b00";
+              const totalSets=Object.values(dayLog).reduce((a,s)=>a+s.filter(Boolean).length,0);
+              return(
+                <div key={key} style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",marginBottom:10,overflow:"hidden"}}>
+                  <div style={{padding:"12px 14px",borderBottom:"1px solid #141414",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{fontSize:14}}>{p.emoji}</span>
+                        <span style={{fontSize:13,fontWeight:600}}>{day}</span>
+                        <span style={{fontSize:8,background:`${htc}20`,color:htc,padding:"2px 6px",borderRadius:4}}>{p.tag}</span>
+                      </div>
+                      <div style={{fontSize:10,color:"#444",marginTop:2}}>{date}</div>
+                    </div>
+                    <div style={{fontSize:11,color:htc,fontWeight:600}}>{totalSets} sets</div>
+                  </div>
+                  <div style={{padding:"10px 14px"}}>
+                    {Object.entries(dayLog).map(([exName,sets])=>(
+                      <div key={exName} style={{marginBottom:8}}>
+                        <div style={{fontSize:10,color:"#555",marginBottom:4}}>{exName}</div>
+                        <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                          {sets.filter(Boolean).map((s,i)=>(
+                            <span key={i} style={{fontSize:10,background:"#141414",border:"1px solid #1e1e1e",borderRadius:4,padding:"3px 8px",color:"#777"}}>{s.v1} · {s.v2}</span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* ── BACKUP ── */}
+      {activeTab==="backup"&&(
+        <div style={{padding:16}}>
+          <div style={{fontSize:10,letterSpacing:2,color:"#444",marginBottom:16}}>BACKUP & RESTORE</div>
+          <div style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",padding:16,marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:600,marginBottom:6}}>💾 Export Everything</div>
+            <div style={{fontSize:11,color:"#555",marginBottom:12}}>Downloads all your logs AND your custom exercise plan. Save to Google Drive.</div>
+            <button onClick={exportAll} style={{width:"100%",padding:14,borderRadius:10,background:"#ff6b00",border:"none",color:"#fff",fontSize:13,fontWeight:700,letterSpacing:1,cursor:"pointer",fontFamily:"inherit"}}>DOWNLOAD BACKUP</button>
+          </div>
+          <div style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",padding:16,marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:600,marginBottom:6}}>📂 Import Backup</div>
+            <div style={{fontSize:11,color:"#555",marginBottom:12}}>Restores logs and your custom plan from a backup file.</div>
+            <label style={{display:"block",padding:14,borderRadius:10,background:"#1a1a1a",border:"1px solid #2a2a2a",color:"#666",fontSize:13,fontWeight:700,letterSpacing:1,cursor:"pointer",textAlign:"center",fontFamily:"inherit"}}>
+              SELECT BACKUP FILE
+              <input type="file" accept=".json" onChange={importAll} style={{display:"none"}}/>
+            </label>
+          </div>
+          <div style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",padding:16,marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:600,marginBottom:6}}>🔄 Reset Plan to Default</div>
+            <div style={{fontSize:11,color:"#555",marginBottom:12}}>Resets all exercises back to original. Your logs are NOT affected.</div>
+            <button onClick={()=>{updatePlan(DEFAULT_PLAN);showToast("Plan reset to default ✓");}} style={{width:"100%",padding:14,borderRadius:10,background:"#1a1a1a",border:"1px solid #ff444440",color:"#ff4444",fontSize:13,fontWeight:700,letterSpacing:1,cursor:"pointer",fontFamily:"inherit"}}>RESET ALL EXERCISES</button>
+          </div>
+          <div style={{background:"#0f0f0f",borderRadius:12,border:"1px solid #1a1a1a",padding:16,marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:600,marginBottom:8}}>📱 Add to Home Screen</div>
+            <div style={{fontSize:11,color:"#666",lineHeight:1.9}}>
+              <div>1. Rename file to index.html</div>
+              <div>2. Upload to GitHub Pages or Netlify</div>
+              <div>3. Open link in Chrome on phone</div>
+              <div>4. Tap ⋮ → "Add to Home Screen" ✓</div>
+            </div>
+          </div>
+          <div style={{padding:12,background:"#0a0a0a",borderRadius:8,border:"1px solid #1a1a1a"}}>
+            <div style={{fontSize:10,color:"#333",letterSpacing:1}}>STORAGE</div>
+            <div style={{fontSize:11,color:"#555",marginTop:4}}>{Object.keys(logs).length} sessions · {((JSON.stringify(logs).length+JSON.stringify(plan).length)/1024).toFixed(1)} KB</div>
+          </div>
+        </div>
+      )}
+      <div style={{height:50}}/>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-</script></body>
-</html><!DOCTYPE html><html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>Dynamic Workout Tracker</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-<style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}body{ background:#080808; color:#e8e8e8; font-family:Arial, sans-serif; -webkit-tap-highlight-color:transparent; }
-
-::-webkit-scrollbar{ display:none; }
-
-button,input{ font-family:inherit; } </style>
-
-</head>
-<body>
-<div id="root"></div><script type="text/babel">
-const { useState, useEffect } = React;
-
-const DEFAULT_PLAN = {
-  Monday: {
-    name: "Push — Chest + Shoulders + Triceps",
-    emoji: "💪",
-    tag: "PUSH",
-    exercises: [
-      { name: "Dumbbell Bench Press", sets: 4, target: "8-12", type: "strength", video: "https://www.youtube.com/watch?v=VmB1G1K7v94" },
-      { name: "Incline Dumbbell Press", sets: 3, target: "10-12", type: "strength", video: "https://www.youtube.com/watch?v=8iPEnn-ltC8" },
-      { name: "Dumbbell Shoulder Press", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=qEwKCR5JCog" },
-      { name: "Dumbbell Lateral Raises", sets: 3, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=3VcKaXpzqRo" },
-      { name: "Overhead Tricep Extension", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=nRiJVZDpdL0" },
-      { name: "Push Ups", sets: 2, target: "Failure", type: "bodyweight", video: "https://www.youtube.com/watch?v=IODxDxX7oi4" },
-    ],
-  },
-
-  Tuesday: {
-    name: "Pull — Back + Biceps",
-    emoji: "🏋️",
-    tag: "PULL",
-    exercises: [
-      { name: "Dumbbell Bent Over Row", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=roCP6wCXPqo" },
-      { name: "Single Arm Dumbbell Row", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=pYcpY20QaE8" },
-      { name: "Band Lat Pulldown", sets: 4, target: "12-15", type: "strength", video: "https://www.youtube.com/watch?v=CAwf7n6Luuc" },
-      { name: "Chest Supported DB Row", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=MgCOXiqULQM" },
-      { name: "Hammer Curls", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=zC3nLlEvin4" },
-      { name: "Band Face Pulls", sets: 3, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=rep-qVOkqgk" },
-    ],
-  },
-
-  Wednesday: {
-    name: "Legs",
-    emoji: "🦵",
-    tag: "LEGS",
-    exercises: [
-      { name: "Kettlebell Goblet Squat", sets: 4, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=MxsFDhcyFyE" },
-      { name: "Bulgarian Split Squat", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=2C-uNgKwPLE" },
-      { name: "Dumbbell Romanian Deadlift", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=JCXUYuzwNrM" },
-      { name: "Dumbbell Reverse Lunges", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=xrjMuqyR2yg" },
-      { name: "Standing Calf Raises", sets: 4, target: "20", type: "bodyweight", video: "https://www.youtube.com/watch?v=gwLzBJYoWlI" },
-      { name: "Plank", sets: 3, target: "45 sec", type: "timed", video: "https://www.youtube.com/watch?v=ASdvN_XEl_c" },
-    ],
-  },
-
-  Thursday: {
-    name: "Upper",
-    emoji: "🔥",
-    tag: "UPPER",
-    exercises: [
-      { name: "Incline Dumbbell Press", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=8iPEnn-ltC8" },
-      { name: "Chest Supported DB Row", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=MgCOXiqULQM" },
-      { name: "Arnold Press", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=6Z15_WdXmVw" },
-      { name: "Band Lat Pulldown", sets: 3, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=CAwf7n6Luuc" },
-      { name: "Close Grip Dumbbell Press", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=LfyQBUKR8SE" },
-      { name: "Dumbbell Bicep Curls", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=ykJmrZ5v0Oo" },
-    ],
-  },
-
-  Friday: {
-    name: "Lower",
-    emoji: "⚡",
-    tag: "LOWER",
-    exercises: [
-      { name: "Dumbbell Sumo Squat", sets: 4, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=_-MbgEeqmsc" },
-      { name: "Dumbbell Stiff Leg Deadlift", sets: 4, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=1uDiW5--rAE" },
-      { name: "Step Ups", sets: 3, target: "12", type: "strength", video: "https://www.youtube.com/watch?v=dQqApCGd5Ss" },
-      { name: "Single Leg Romanian Deadlift", sets: 3, target: "10", type: "strength", video: "https://www.youtube.com/watch?v=84P-r7XXudM" },
-      { name: "Seated Calf Raises", sets: 4, target: "15", type: "strength", video: "https://www.youtube.com/watch?v=YMmgqO8Jo-k" },
-      { name: "Hollow Body Hold", sets: 3, target: "30 sec", type: "timed", video: "https://www.youtube.com/watch?v=LlDNef_Ztsc" },
-    ],
-  },
-
-  Saturday: {
-    name: "Cardio + Core",
-    emoji: "🏃",
-    tag: "CARDIO",
-    exercises: [
-      { name: "Incline Treadmill Walk", sets: 1, target: "30-45 mins", type: "cardio", video: "https://www.youtube.com/watch?v=vGvAFO_EwUQ" },
-      { name: "Jump Rope", sets: 10, target: "1 min", type: "cardio", video: "https://www.youtube.com/watch?v=1BZM6j1LALk" },
-      { name: "Mountain Climbers", sets: 3, target: "30 sec", type: "bodyweight", video: "https://www.youtube.com/watch?v=nmwgirgXLYM" },
-      { name: "Lying Leg Raises", sets: 3, target: "15", type: "bodyweight", video: "https://www.youtube.com/watch?v=JB2oyawG9KI" },
-      { name: "Russian Twists", sets: 3, target: "20", type: "bodyweight", video: "https://www.youtube.com/watch?v=wkD8rjkodUI" },
-      { name: "Dead Bug", sets: 3, target: "15", type: "bodyweight", video: "https://www.youtube.com/watch?v=g_BYB0R-4Ws" },
-    ],
-  },
-
-  Sunday: {
-    name: "Rest & Recover",
-    emoji: "🛌",
-    tag: "REST",
-    exercises: [],
-  },
-};
-
-const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-
-const COLORS = {
-  PUSH: "#ff6b00",
-  PULL: "#7c3aed",
-  LEGS: "#059669",
-  UPPER: "#dc2626",
-  LOWER: "#0284c7",
-  CARDIO: "#d97706",
-  REST: "#374151",
-};
-
-function App(){
-  const [selectedDay, setSelectedDay] = useState("Monday");
-
-  const [plan, setPlan] = useState(() => {
-    const saved = localStorage.getItem("dynamic_plan");
-    return saved ? JSON.parse(saved) : DEFAULT_PLAN;
-  });
-
-  useEffect(() => {
-    localStorage.setItem("dynamic_plan", JSON.stringify(plan));
-  }, [plan]);
-
-  const workout = plan[selectedDay];
-  const color = COLORS[workout.tag];
-
-  const updateExerciseName = (index, value) => {
-    const updated = {...plan};
-    updated[selectedDay].exercises[index].name = value;
-    setPlan(updated);
-  };
-
-  const addExercise = () => {
-    const updated = {...plan};
-
-    updated[selectedDay].exercises.push({
-      name: "New Exercise",
-      sets: 3,
-      target: "10-12",
-      type: "strength",
-      video: ""
-    });
-
-    setPlan(updated);
-  };
-
-  const deleteExercise = (index) => {
-    const updated = {...plan};
-    updated[selectedDay].exercises.splice(index, 1);
-    setPlan(updated);
-  };
-
-  const addSet = (index) => {
-    const updated = {...plan};
-    updated[selectedDay].exercises[index].sets += 1;
-    setPlan(updated);
-  };
-
-  const removeSet = (index) => {
-    const updated = {...plan};
-
-    if(updated[selectedDay].exercises[index].sets > 1){
-      updated[selectedDay].exercises[index].sets -= 1;
-    }
-
-    setPlan(updated);
-  };
-
-  return (
-    <div>
-
-      <div style={{
-        background: color,
-        padding: "22px",
-        fontWeight: "bold",
-        fontSize: "26px"
-      }}>
-        Dynamic Workout Tracker
-      </div>
-
-      <div style={{
-        display: "flex",
-        gap: "8px",
-        overflowX: "auto",
-        padding: "14px"
-      }}>
-        {DAYS.map(day => (
-          <button
-            key={day}
-            onClick={() => setSelectedDay(day)}
-            style={{
-              background: selectedDay === day ? color : "#111",
-              color: "white",
-              border: "1px solid #222",
-              padding: "10px 14px",
-              borderRadius: "10px",
-              cursor: "pointer",
-              minWidth: "90px"
-            }}
-          >
-            {day}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ padding: "16px" }}>
-
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          marginBottom: "18px"
-        }}>
-          <div style={{ fontSize: "34px" }}>
-            {workout.emoji}
-          </div>
-
-          <div>
-            <div style={{ fontSize: "20px", fontWeight: "bold" }}>
-              {workout.name}
-            </div>
-
-            <div style={{ color: "#777", marginTop: "4px" }}>
-              {workout.exercises.length} exercises
-            </div>
-          </div>
-        </div>
-
-        {
-          workout.exercises.length === 0 ? (
-            <div style={{
-              background: "#111",
-              padding: "40px",
-              borderRadius: "14px",
-              textAlign: "center"
-            }}>
-              <div style={{ fontSize: "60px" }}>🛌</div>
-              <div style={{ marginTop: "10px", fontSize: "22px" }}>
-                Rest Day
-              </div>
-            </div>
-          ) : (
-            <>
-              {
-                workout.exercises.map((ex, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      background: "#111",
-                      border: "1px solid #1f1f1f",
-                      borderRadius: "14px",
-                      padding: "16px",
-                      marginBottom: "14px"
-                    }}
-                  >
-
-                    <input
-                      value={ex.name}
-                      onChange={(e) => updateExerciseName(index, e.target.value)}
-                      style={{
-                        width: "100%",
-                        background: "#1a1a1a",
-                        border: "1px solid #333",
-                        padding: "12px",
-                        borderRadius: "10px",
-                        color: "white",
-                        fontSize: "16px",
-                        marginBottom: "10px"
-                      }}
-                    />
-
-                    <div style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "12px",
-                      flexWrap: "wrap",
-                      gap: "10px"
-                    }}>
-                      <div style={{ color: "#777" }}>
-                        {ex.sets} sets • {ex.target}
-                      </div>
-
-                      {
-                        ex.video && (
-                          <a
-                            href={ex.video}
-                            target="_blank"
-                            style={{
-                              background: "#222",
-                              color: "white",
-                              textDecoration: "none",
-                              padding: "8px 12px",
-                              borderRadius: "8px"
-                            }}
-                          >
-                            📹 Form
-                          </a>
-                        )
-                      }
-                    </div>
-
-                    <div style={{
-                      display: "flex",
-                      gap: "8px",
-                      marginBottom: "14px",
-                      flexWrap: "wrap"
-                    }}>
-                      <button
-                        onClick={() => addSet(index)}
-                        style={{
-                          background: "#00d084",
-                          border: "none",
-                          padding: "10px 12px",
-                          borderRadius: "8px",
-                          color: "white",
-                          cursor: "pointer"
-                        }}
-                      >
-                        + Set
-                      </button>
-
-                      <button
-                        onClick={() => removeSet(index)}
-                        style={{
-                          background: "#ff8800",
-                          border: "none",
-                          padding: "10px 12px",
-                          borderRadius: "8px",
-                          color: "white",
-                          cursor: "pointer"
-                        }}
-                      >
-                        - Set
-                      </button>
-
-                      <button
-                        onClick={() => deleteExercise(index)}
-                        style={{
-                          background: "#ff4444",
-                          border: "none",
-                          padding: "10px 12px",
-                          borderRadius: "8px",
-                          color: "white",
-                          cursor: "pointer"
-                        }}
-                      >
-                        Delete Exercise
-                      </button>
-                    </div>
-
-                    {
-                      Array.from({ length: ex.sets }).map((_, setIndex) => (
-                        <div
-                          key={setIndex}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "60px 1fr 1fr",
-                            gap: "8px",
-                            marginBottom: "8px"
-                          }}
-                        >
-                          <div style={{
-                            background: color,
-                            borderRadius: "8px",
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            fontWeight: "bold"
-                          }}>
-                            {setIndex + 1}
-                          </div>
-
-                          <input
-                            placeholder="Weight"
-                            style={{
-                              background: "#1a1a1a",
-                              border: "1px solid #333",
-                              padding: "12px",
-                              borderRadius: "8px",
-                              color: "white"
-                            }}
-                          />
-
-                          <input
-                            placeholder="Reps"
-                            style={{
-                              background: "#1a1a1a",
-                              border: "1px solid #333",
-                              padding: "12px",
-                              borderRadius: "8px",
-                              color: "white"
-                            }}
-                          />
-                        </div>
-                      ))
-                    }
-                  </div>
-                ))
-              }
-
-              <button
-                onClick={addExercise}
-                style={{
-                  width: "100%",
-                  padding: "16px",
-                  background: "#00d084",
-                  border: "none",
-                  borderRadius: "14px",
-                  color: "white",
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                  marginTop: "8px"
-                }}
-              >
-                + Add Exercise
-              </button>
-            </>
-          )
-        }
-      </div>
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-</script></body>
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
 </html>
